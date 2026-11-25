@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 /**
  * Optional filters for listing inventory items. All filters are combined with AND.
  *
- * @param q          free text matched against name and brand (case-insensitive)
+ * @param q          free text matched against name, brand and category name (case-insensitive)
  * @param categoryId a category; a top-level category also matches its subcategories
  * @param minAbv     lowest alcohol by volume, inclusive
  * @param maxAbv     highest alcohol by volume, inclusive

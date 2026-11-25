@@ -161,7 +161,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          '*/*': components['schemas']['InventoryItemResponse']
+          'application/json': components['schemas']['InventoryItemResponse']
         }
       }
     }
@@ -187,7 +187,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          '*/*': components['schemas']['InventoryItemResponse']
+          'application/json': components['schemas']['InventoryItemResponse']
         }
       }
     }
@@ -240,7 +240,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          '*/*': components['schemas']['PageResponseInventoryItemResponse']
+          'application/json': components['schemas']['PageResponseInventoryItemResponse']
         }
       }
     }
@@ -264,7 +264,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          '*/*': components['schemas']['InventoryItemResponse']
+          'application/json': components['schemas']['InventoryItemResponse']
         }
       }
     }
@@ -290,7 +290,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          '*/*': components['schemas']['InventoryItemResponse']
+          'application/json': components['schemas']['InventoryItemResponse']
         }
       }
     }
@@ -310,7 +310,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          '*/*': components['schemas']['CategoryResponse'][]
+          'application/json': components['schemas']['CategoryResponse'][]
         }
       }
     }

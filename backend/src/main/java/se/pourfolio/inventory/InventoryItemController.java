@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +24,7 @@ import jakarta.validation.Valid;
 import se.pourfolio.common.web.PageResponse;
 
 @RestController
-@RequestMapping("/api/inventory-items")
+@RequestMapping(path = "/api/inventory-items", produces = MediaType.APPLICATION_JSON_VALUE)
 public class InventoryItemController {
 
     private final InventoryItemService service;

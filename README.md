@@ -54,6 +54,8 @@ cd backend && ./mvnw verify          # kräver Docker (Testcontainers)
 cd frontend && npm run lint && npm test
 ```
 
+Frontendtesterna kör hela appen mot ett mockat API (MSW) – ingen backend behövs.
+
 ## Konfiguration
 
 Backend (miljövariabler, med standardvärden för lokal utveckling):

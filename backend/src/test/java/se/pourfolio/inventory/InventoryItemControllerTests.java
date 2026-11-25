@@ -190,9 +190,11 @@ class InventoryItemControllerTests {
                 .andExpect(jsonPath("$.content[*].name", contains(
                         "Absolut Vodka", "Campari", "Hendrick's", "Lime", "Tanqueray London Dry")));
 
-        // Free text matches name or brand, case-insensitively.
+        // Free text matches name, brand or category name, case-insensitively.
         mockMvc.perform(get(URL).param("q", "tanq"))
                 .andExpect(jsonPath("$.content[*].name", contains("Tanqueray London Dry")));
+        mockMvc.perform(get(URL).param("q", "GIN"))
+                .andExpect(jsonPath("$.content[*].name", contains("Hendrick's", "Tanqueray London Dry")));
 
         // A top-level category includes its subcategories.
         mockMvc.perform(get(URL).param("categoryId", String.valueOf(spirits)))

@@ -16,7 +16,8 @@ final class InventoryItemSpecifications {
         String pattern = "%" + escapeLike(text.trim().toLowerCase(Locale.ROOT)) + "%";
         return (root, query, cb) -> cb.or(
                 cb.like(cb.lower(root.get("name")), pattern, '\\'),
-                cb.like(cb.lower(cb.coalesce(root.get("brand"), "")), pattern, '\\'));
+                cb.like(cb.lower(cb.coalesce(root.get("brand"), "")), pattern, '\\'),
+                cb.like(cb.lower(root.get("category").get("name")), pattern, '\\'));
     }
 
     static Specification<InventoryItem> inCategories(Collection<Long> categoryIds) {

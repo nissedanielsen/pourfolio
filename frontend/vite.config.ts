@@ -8,7 +8,12 @@ export default defineConfig({
   server: {
     // In development, /api calls go to the local Spring Boot backend.
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': {
+        target: 'http://localhost:8080',
+        // Proxied calls are same-origin from the browser's point of view; drop Origin so the
+        // backend's CORS check (meant for separately hosted frontends) doesn't apply.
+        configure: (proxy) => proxy.on('proxyReq', (proxyReq) => proxyReq.removeHeader('origin')),
+      },
     },
   },
   test: {
