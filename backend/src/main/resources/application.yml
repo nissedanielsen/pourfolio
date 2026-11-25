@@ -10,6 +10,12 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/pourfolio}
     username: ${DATABASE_USERNAME:pourfolio}
     password: ${DATABASE_PASSWORD:pourfolio}
+    hikari:
+      # Don't keep idle connections open, so a scale-to-zero database (Neon) can suspend
+      # when the app isn't used. The first query after a pause opens a new connection.
+      minimum-idle: 0
+      idle-timeout: 60000
+      maximum-pool-size: 5
   jpa:
     open-in-view: false
     hibernate:
@@ -32,6 +38,13 @@ management:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      probes:
+        # /actuator/health/liveness answers without touching the database. Use it as the
+        # hosting platform's health check so frequent checks don't keep the database awake.
+        # /actuator/health still includes the database check for manual diagnostics.
+        enabled: true
 
 pourfolio:
   cors:

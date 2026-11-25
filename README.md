@@ -91,6 +91,8 @@ Frontend och backend driftas separat. Vercel kör inte Java, så backend behöve
 containertjänst.
 
 **Databas** – en hanterad PostgreSQL, t.ex. Neon. Flyway skapar tabellerna vid start.
+Använd Neons direkta anslutning (värdnamn utan `-pooler`). Appen håller inga anslutningar
+öppna i onödan, så Neon kan stängas av när appen inte används.
 
 **Backend** – bygg containern från `backend/Dockerfile` (t.ex. Render, Railway, Fly.io eller
 Google Cloud Run) och sätt:
@@ -100,7 +102,9 @@ Google Cloud Run) och sätt:
 - `DATABASE_USERNAME` och `DATABASE_PASSWORD`
 - `CORS_ALLOWED_ORIGINS` till frontendens adress, t.ex. `https://pourfolio.vercel.app`
 
-`PORT` sätts normalt av tjänsten. Hälsokontroll: `/actuator/health`.
+`PORT` sätts normalt av tjänsten. Använd `/actuator/health/liveness` som hälsokontroll i
+tjänsten – den frågar inte databasen, så täta kontroller håller inte Neon vaken.
+`/actuator/health` kontrollerar även databasen och passar för manuell felsökning.
 
 **Frontend (Vercel)** – importera repot, välj `frontend` som _Root Directory_ och sätt
 `VITE_API_URL` till backendens adress. `frontend/vercel.json` gör att direktlänkar som
