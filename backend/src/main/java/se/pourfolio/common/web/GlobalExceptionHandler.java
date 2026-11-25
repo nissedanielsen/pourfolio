@@ -3,6 +3,7 @@ package se.pourfolio.common.web;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -33,6 +34,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setProperty("errors", Map.of(ex.getField(), ex.getMessage()));
         return problem;
+    }
+
+    /**
+     * Tomcat rejects query parameters that are not valid UTF-8 (e.g. Latin-1 "å" from some
+     * command-line clients). That is a client error: answer 400 instead of logging an ERROR.
+     * The rejected value is not echoed, since it is garbled anyway.
+     */
+    @ExceptionHandler(InvalidParameterException.class)
+    ProblemDetail handleUndecodableParameter(InvalidParameterException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Request parameters could not be decoded; send them percent-encoded as UTF-8");
     }
 
     @ExceptionHandler(PropertyReferenceException.class)
