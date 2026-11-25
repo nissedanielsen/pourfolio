@@ -11,7 +11,7 @@ test('add, find, adjust, edit and delete an item', async ({ page }, testInfo) =>
 
   // Add
   await page.goto('/')
-  await page.getByRole('link', { name: 'Lägg till' }).click()
+  await page.getByRole('link', { name: 'Lägg till', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Lägg till' })).toBeVisible()
   await page.getByRole('combobox', { name: /Kategori/ }).selectOption({ label: 'Gin' })
   await page.getByRole('textbox', { name: /Namn/ }).fill(name)
