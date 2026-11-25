@@ -11,7 +11,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:api": "npx -y -p typescript@5 -p openapi-typescript@7 openapi-typescript http://localhost:8080/v3/api-docs -o src/api/schema.ts && prettier --write src/api/schema.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

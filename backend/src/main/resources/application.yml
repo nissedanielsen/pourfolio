@@ -9,8 +9,18 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+    properties:
+      # Items without a value (e.g. no ABV) sort last in both directions.
+      hibernate.order_by.default_null_ordering: last
   flyway:
     locations: classpath:db/migration
+  jackson:
+    # Optional fields are left out instead of sent as null (matches the generated TS types).
+    default-property-inclusion: non_null
+  data:
+    web:
+      pageable:
+        max-page-size: 200
 
 management:
   endpoints:
