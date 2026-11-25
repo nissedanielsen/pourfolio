@@ -47,6 +47,37 @@ describe('InventoryPage', () => {
     expect(backend.requests.at(-1)?.url.searchParams.get('q')).toBe('absolut')
   })
 
+  it('keeps both filters when toggling a switch while a search is pending', async () => {
+    setup([makeItem(), makeItem({ id: 2, name: 'Absolut Vodka', remaining: 100 })])
+    const user = userEvent.setup()
+    const { router } = renderApp()
+    await screen.findByText('2 saker')
+
+    // Toggle before the debounced search has been applied, then let it apply.
+    await user.type(screen.getByRole('searchbox', { name: 'Sök' }), 'absolut')
+    await user.click(screen.getByRole('switch', { name: 'Snart slut' }))
+
+    await waitFor(() => {
+      const params = new URLSearchParams(router.state.location.search)
+      expect(params.get('q')).toBe('absolut')
+      expect(params.get('lowStock')).toBe('true')
+    })
+    expect(screen.getByRole('switch', { name: 'Snart slut' })).toBeChecked()
+  })
+
+  it('clears half-typed search text when filters are reset', async () => {
+    setup([makeItem()])
+    const user = userEvent.setup()
+    renderApp('/?lowStock=true')
+    await screen.findByText('1 sak')
+
+    const search = screen.getByRole('searchbox', { name: 'Sök' })
+    await user.type(search, 'tanq')
+    await user.click(screen.getByRole('button', { name: 'Rensa filter' }))
+
+    expect(screen.getByRole('searchbox', { name: 'Sök' })).toHaveValue('')
+  })
+
   it('shows an empty state', async () => {
     setup([])
     renderApp()
@@ -59,8 +90,9 @@ describe('InventoryPage', () => {
     const { router } = renderApp()
 
     await user.click(await screen.findByRole('link', { name: /Lägg till din första flaska/ }))
-    await user.click(await screen.findByRole('combobox', { name: /Kategori/ }))
-    await user.click(await screen.findByRole('option', { name: 'Gin' }))
+    const category = await screen.findByRole('combobox', { name: /Kategori/ })
+    await waitFor(() => expect(category).toBeEnabled())
+    await user.selectOptions(category, 'Gin')
     await user.type(screen.getByRole('textbox', { name: /Namn/ }), 'Hendrick’s')
     await user.type(screen.getByRole('textbox', { name: 'Alkoholhalt' }), '41,4')
     await user.click(screen.getByText('50 cl'))

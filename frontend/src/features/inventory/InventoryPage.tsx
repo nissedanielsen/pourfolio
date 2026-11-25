@@ -26,6 +26,12 @@ export function InventoryPage() {
 
   const [adjusting, setAdjusting] = useState<InventoryItem | null>(null)
   const [deleting, setDeleting] = useState<InventoryItem | null>(null)
+  // Remounts the filter bar on reset so half-typed, not yet applied input is cleared too.
+  const [filterBarKey, setFilterBarKey] = useState(0)
+  const resetFilters = () => {
+    reset()
+    setFilterBarKey((key) => key + 1)
+  }
 
   const page = items.data
   const total = page?.totalElements ?? 0
@@ -48,10 +54,11 @@ export function InventoryPage() {
       </Stack>
 
       <InventoryFiltersBar
+        key={filterBarKey}
         filters={filters}
         categories={categories.data ?? []}
         onChange={update}
-        onReset={reset}
+        onReset={resetFilters}
       />
 
       {items.isError ? (
@@ -70,7 +77,11 @@ export function InventoryPage() {
           <CircularProgress aria-label="Laddar" />
         </Box>
       ) : total === 0 ? (
-        <EmptyState filtered={hasActiveFilters(filters)} onReset={reset} returnTo={returnTo} />
+        <EmptyState
+          filtered={hasActiveFilters(filters)}
+          onReset={resetFilters}
+          returnTo={returnTo}
+        />
       ) : (
         <>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>

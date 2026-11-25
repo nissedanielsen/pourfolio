@@ -13,7 +13,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useLocation, useNavigate, useParams } from 'react-router'
-import { ApiError, type InventoryItem } from '../../api/client'
+import { ApiError, type Category, type InventoryItem } from '../../api/client'
 import { useNotify } from '../../components/notify'
 import { unitLabel } from '../../lib/units'
 import { CategorySelect } from '../categories/CategorySelect'
@@ -36,6 +36,7 @@ export function ItemFormPage() {
   const isNew = id === undefined
   const itemId = Number(id)
   const item = useInventoryItem(itemId, { enabled: !isNew })
+  const categories = useCategories()
 
   if (!isNew && Number.isNaN(itemId)) {
     return <Alert severity="error">Ogiltig adress.</Alert>
@@ -46,21 +47,24 @@ export function ItemFormPage() {
       <Alert severity="error">{notFound ? 'Posten finns inte.' : 'Kunde inte hämta posten.'}</Alert>
     )
   }
-  if (!isNew && !item.data) {
+  if (categories.isError) {
+    return <Alert severity="error">Kunde inte hämta kategorierna.</Alert>
+  }
+  // Render the form only when everything it needs is loaded, so nothing changes under the user.
+  if ((!isNew && !item.data) || !categories.data) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
         <CircularProgress aria-label="Laddar" />
       </Box>
     )
   }
-  return <ItemForm key={id ?? 'new'} item={item.data} />
+  return <ItemForm key={id ?? 'new'} item={item.data} categories={categories.data} />
 }
 
-function ItemForm({ item }: { item?: InventoryItem }) {
+function ItemForm({ item, categories }: { item?: InventoryItem; categories: Category[] }) {
   const navigate = useNavigate()
   const location = useLocation()
   const notify = useNotify()
-  const categories = useCategories()
   const create = useCreateItem()
   const update = useUpdateItem(item?.id ?? 0)
   const returnTo = (location.state as { returnTo?: string } | null)?.returnTo ?? '/'
@@ -152,7 +156,7 @@ function ItemForm({ item }: { item?: InventoryItem }) {
             <CategorySelect
               label="Kategori"
               required
-              categories={categories.data ?? []}
+              categories={categories}
               value={field.value}
               onChange={field.onChange}
               onBlur={field.onBlur}

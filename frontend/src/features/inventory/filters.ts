@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import type { UnitType } from '../../api/client'
 import { parseNumberInput } from '../../lib/units'
@@ -78,21 +78,29 @@ export function useInventoryFilters() {
   const [params, setParams] = useSearchParams()
   const filters = useMemo(() => parseFilters(params), [params])
 
+  // The filters we most recently asked for. URL updates are rendered in a transition, so two
+  // quick changes (e.g. a debounced search and a switch) must not both start from the
+  // last *rendered* URL, or one of them is lost.
+  const intended = useRef(params)
+  useEffect(() => {
+    // The URL changed (our own update, back/forward, or a link): adopt it.
+    intended.current = params
+  }, [params])
+
   const update = useCallback(
     (changes: Partial<InventoryFilters>) => {
-      setParams(
-        (current) => {
-          const next = { ...parseFilters(current), ...changes }
-          if (!('page' in changes)) next.page = 1
-          return toSearchParams(next)
-        },
-        { replace: true },
-      )
+      const next = { ...parseFilters(intended.current), ...changes }
+      if (!('page' in changes)) next.page = 1
+      intended.current = toSearchParams(next)
+      setParams(intended.current, { replace: true })
     },
     [setParams],
   )
 
-  const reset = useCallback(() => setParams(new URLSearchParams(), { replace: true }), [setParams])
+  const reset = useCallback(() => {
+    intended.current = new URLSearchParams()
+    setParams(intended.current, { replace: true })
+  }, [setParams])
 
   return { filters, update, reset }
 }

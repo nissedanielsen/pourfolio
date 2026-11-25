@@ -1,5 +1,3 @@
-import ListSubheader from '@mui/material/ListSubheader'
-import MenuItem from '@mui/material/MenuItem'
 import TextField, { type TextFieldProps } from '@mui/material/TextField'
 import type { Category } from '../../api/client'
 
@@ -11,23 +9,11 @@ type Props = Omit<TextFieldProps, 'select' | 'children' | 'value' | 'onChange'> 
   allowTopLevel?: boolean
 }
 
-/** A select over the two-level category tree, grouped by top-level category. */
+/**
+ * A select over the two-level category tree. Uses the native select so phones show
+ * their own picker.
+ */
 export function CategorySelect({ categories, value, onChange, allowTopLevel, ...props }: Props) {
-  const options = categories.flatMap((top) => [
-    allowTopLevel ? (
-      <MenuItem key={top.id} value={String(top.id)} sx={{ fontWeight: 600 }}>
-        {top.name}
-      </MenuItem>
-    ) : (
-      <ListSubheader key={top.id}>{top.name}</ListSubheader>
-    ),
-    ...top.children.map((child) => (
-      <MenuItem key={child.id} value={String(child.id)} sx={{ pl: 4 }}>
-        {child.name}
-      </MenuItem>
-    )),
-  ])
-
   return (
     <TextField
       select
@@ -36,12 +22,40 @@ export function CategorySelect({ categories, value, onChange, allowTopLevel, ...
       {...props}
       slotProps={{
         ...props.slotProps,
-        inputLabel: allowTopLevel ? { shrink: true } : undefined,
-        select: { displayEmpty: allowTopLevel, MenuProps: { sx: { maxHeight: 480 } } },
+        inputLabel: { shrink: true },
+        select: { native: true },
       }}
     >
-      {allowTopLevel && <MenuItem value="">Alla kategorier</MenuItem>}
-      {options}
+      {allowTopLevel ? (
+        <>
+          <option value="">Alla kategorier</option>
+          {categories.map((top) => (
+            <optgroup key={top.id} label={top.name}>
+              <option value={String(top.id)}>Alla – {top.name}</option>
+              {top.children.map((child) => (
+                <option key={child.id} value={String(child.id)}>
+                  {child.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </>
+      ) : (
+        <>
+          <option value="" disabled>
+            Välj kategori
+          </option>
+          {categories.map((top) => (
+            <optgroup key={top.id} label={top.name}>
+              {top.children.map((child) => (
+                <option key={child.id} value={String(child.id)}>
+                  {child.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </>
+      )}
     </TextField>
   )
 }

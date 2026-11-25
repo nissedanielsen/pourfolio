@@ -218,6 +218,17 @@ class InventoryItemControllerTests {
     }
 
     @Test
+    void sortsNamesInSwedishOrder() throws Exception {
+        for (String name : new String[] {"Örnbo", "ägglikör", "Zubrowka", "Ångström", "absolut"}) {
+            create(gin, name, null, "40", "VOLUME", 700, 700).andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get(URL))
+                .andExpect(jsonPath("$.content[*].name", contains(
+                        "absolut", "Zubrowka", "Ångström", "ägglikör", "Örnbo")));
+    }
+
+    @Test
     void rejectsUnknownSortProperty() throws Exception {
         mockMvc.perform(get(URL).param("sort", "nope"))
                 .andExpect(status().isBadRequest());

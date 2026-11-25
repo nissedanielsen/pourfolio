@@ -33,9 +33,16 @@ export function useInventoryItem(id: number, options: { enabled?: boolean } = {}
   })
 }
 
+/**
+ * After a change, cancel in-flight list fetches before invalidating. A fetch that started
+ * before the change was saved could otherwise finish afterwards and show stale data.
+ */
 function useInvalidateInventory() {
   const queryClient = useQueryClient()
-  return () => queryClient.invalidateQueries({ queryKey: inventoryKey })
+  return async () => {
+    await queryClient.cancelQueries({ queryKey: inventoryKey })
+    await queryClient.invalidateQueries({ queryKey: inventoryKey })
+  }
 }
 
 export function useCreateItem() {
