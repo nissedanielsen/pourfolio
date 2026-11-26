@@ -17,6 +17,7 @@ import { useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router'
 import type { RecipeSummary } from '../../api/client'
 import { describeServings, describeShortfall } from './recipeFormat'
+import { SurpriseButton } from './SurpriseButton'
 import { useRecipes, useShoppingSuggestions, type RecipeFilter } from './useRecipes'
 
 const FILTERS: { value: RecipeFilter; label: string }[] = [
@@ -47,9 +48,22 @@ export function DrinksPage() {
 
   return (
     <>
-      <Typography variant="h4" component="h1" sx={{ mb: 2 }}>
-        Drinkar
-      </Typography>
+      <Stack
+        direction="row"
+        useFlexGap
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 1,
+          mb: 2,
+        }}
+      >
+        <Typography variant="h4" component="h1">
+          Drinkar
+        </Typography>
+        <SurpriseButton />
+      </Stack>
 
       <ShoppingSuggestions />
 

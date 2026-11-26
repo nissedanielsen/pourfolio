@@ -44,6 +44,17 @@ test('sign in, add, find, adjust, edit, delete and sign out', async ({ page }, t
   await expect(
     page.getByRole('listitem', { name: 'Gin (valfri sort): Finns hemma' }),
   ).toContainText(name)
+
+  // "Överraska mig" suggests something (makeable, or missing one thing in an empty bar)
+  await page
+    .getByRole('navigation', { name: 'Huvudmeny' })
+    .getByRole('link', { name: 'Drinkar' })
+    .click()
+  await page.getByRole('button', { name: 'Överraska mig' }).click()
+  const surprise = page.getByRole('dialog', { name: 'Vad sägs om …' })
+  await expect(surprise.getByRole('link', { name: 'Visa receptet' })).toBeVisible()
+  await surprise.getByRole('button', { name: 'Stäng' }).click()
+
   await page.getByRole('link', { name: 'Inventarie' }).click()
   await expect(page.getByRole('heading', { name: 'Inventarie' })).toBeVisible()
 

@@ -53,6 +53,8 @@ och jämför dem med inventariet:
   räknas som en portion per styck. Stänk och "fyll upp" kräver bara att något finns.
 - **Alltid hemma** – is, vatten, sodavatten, socker, sockerlag och salt behöver inte registreras.
 - **Köptips** – vad som skulle göra flest nya drinkar möjliga, bland recept som bara saknar en sak.
+- **Överraska mig** – en slumpad drink du kan göra just nu; _Ge mig en annan_ visar alla innan
+  någon upprepas. Kan inget göras föreslås en drink som bara saknar en sak.
 
 ## Streckkoder
 

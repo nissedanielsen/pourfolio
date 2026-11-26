@@ -1,6 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
+import type { RecipeSummary } from '../../api/client'
 import { createFakeBackend, makeItem, server } from '../../test/server'
 import { renderApp } from '../../test/renderApp'
 import { describeServings, describeShortfall, formatRecipeAmount } from './recipeFormat'
@@ -179,5 +181,113 @@ describe('ingredient on inventory items', () => {
     await user.selectOptions(await screen.findByRole('combobox', { name: /Kategori/ }), 'Gin')
 
     expect(screen.queryByRole('combobox', { name: /Ingrediens/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('Överraska mig', () => {
+  const drink = (id: number, name: string): RecipeSummary => ({
+    id,
+    code: `d${id}`,
+    name,
+    canMake: true,
+    missingCount: 0,
+    servings: 2,
+    missing: [],
+  })
+
+  /** Replaces the recipe list the fake backend returns, per filter. */
+  function recipes(byFilter: Partial<Record<string, RecipeSummary[]>>) {
+    server.use(
+      http.get('*/api/recipes', ({ request }) =>
+        HttpResponse.json(byFilter[new URL(request.url).searchParams.get('filter') ?? 'ALL'] ?? []),
+      ),
+    )
+  }
+
+  async function openSurprise() {
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Överraska mig' }))
+    return { user, dialog: await screen.findByRole('dialog', { name: 'Vad sägs om …' }) }
+  }
+
+  it('suggests drinks you can make and goes through them all before repeating', async () => {
+    setup()
+    recipes({ CAN_MAKE: [drink(1, 'Gimlet'), drink(2, 'Negroni'), drink(3, 'Daiquiri')] })
+    renderApp('/drinks')
+
+    const { user, dialog } = await openSurprise()
+    const seen = new Set<string>()
+    for (let i = 0; i < 3; i++) {
+      const heading = await within(dialog).findByRole('heading', { level: 3 })
+      seen.add(heading.textContent ?? '')
+      if (i < 2) await user.click(within(dialog).getByRole('button', { name: 'Ge mig en annan' }))
+    }
+
+    expect(seen).toEqual(new Set(['Gimlet', 'Negroni', 'Daiquiri']))
+    expect(within(dialog).getByText('Räcker till 2 drinkar')).toBeInTheDocument()
+  })
+
+  it('says when there is only one drink to suggest', async () => {
+    setup()
+    recipes({ CAN_MAKE: [drink(1, 'Gimlet')] })
+    renderApp('/drinks')
+
+    const { dialog } = await openSurprise()
+
+    expect(await within(dialog).findByRole('heading', { name: 'Gimlet' })).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Ge mig en annan' })).toBeDisabled()
+    expect(
+      within(dialog).getByText('Det här är den enda drinken du kan göra just nu.'),
+    ).toBeInTheDocument()
+  })
+
+  it('falls back to a drink missing one thing when nothing can be made', async () => {
+    setup()
+    recipes({
+      CAN_MAKE: [],
+      MISSING_ONE: [
+        {
+          ...drink(2, 'Gin & Tonic'),
+          canMake: false,
+          missingCount: 1,
+          servings: undefined,
+          missing: [{ name: 'Tonic', status: 'MISSING' }],
+        },
+      ],
+    })
+    renderApp('/drinks')
+
+    const { dialog } = await openSurprise()
+
+    expect(await within(dialog).findByRole('heading', { name: 'Gin & Tonic' })).toBeInTheDocument()
+    expect(within(dialog).getByText(/den här saknar bara en sak/)).toBeInTheDocument()
+    expect(within(dialog).getByText('Saknas: Tonic')).toBeInTheDocument()
+  })
+
+  it('says so when nothing can be suggested', async () => {
+    setup()
+    recipes({ CAN_MAKE: [], MISSING_ONE: [] })
+    renderApp('/drinks')
+
+    const { dialog } = await openSurprise()
+
+    expect(
+      await within(dialog).findByText(/Inget kan göras med det du har hemma/),
+    ).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole('button', { name: 'Ge mig en annan' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('opens the suggested recipe', async () => {
+    setup()
+    recipes({ CAN_MAKE: [drink(1, 'Gimlet')] })
+    const { router } = renderApp('/drinks')
+
+    const { user, dialog } = await openSurprise()
+    await user.click(await within(dialog).findByRole('link', { name: 'Visa receptet' }))
+
+    await screen.findByRole('heading', { name: 'Gimlet', level: 1 })
+    expect(router.state.location.pathname).toBe('/drinks/1')
   })
 })
