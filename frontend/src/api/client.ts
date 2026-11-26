@@ -8,6 +8,12 @@ export type InventoryItemRequest = Schemas['InventoryItemRequest']
 export type InventoryItemPage = Schemas['PageResponseInventoryItemResponse']
 export type Category = Schemas['CategoryResponse']
 export type UnitType = InventoryItem['unitType']
+export type Ingredient = Schemas['IngredientResponse']
+export type RecipeSummary = Schemas['RecipeSummary']
+export type RecipeDetail = Schemas['RecipeDetail']
+export type RecipeLine = Schemas['RecipeLine']
+export type Shortfall = Schemas['Shortfall']
+export type ShoppingSuggestion = Schemas['ShoppingSuggestion']
 
 // Backend origin. Unset in development (Vite proxies /api to the local backend);
 // set VITE_API_URL when the frontend is hosted separately (e.g. on Vercel).

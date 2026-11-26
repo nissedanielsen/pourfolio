@@ -14,6 +14,8 @@ import {
 export const itemFormSchema = z
   .object({
     categoryId: z.string().min(1, 'Välj en kategori'),
+    /** Optional; '' means no specific ingredient. */
+    ingredientId: z.string(),
     name: z.string().trim().min(1, 'Ange ett namn').max(200, 'Högst 200 tecken'),
     brand: z.string().trim().max(200, 'Högst 200 tecken'),
     unitType: z.enum(['VOLUME', 'COUNT']),
@@ -59,6 +61,7 @@ function hasAtMostOneDecimal(value: number): boolean {
 
 export const emptyItemForm: ItemFormValues = {
   categoryId: '',
+  ingredientId: '',
   name: '',
   brand: '',
   unitType: 'VOLUME',
@@ -71,6 +74,7 @@ export const emptyItemForm: ItemFormValues = {
 export function toFormValues(item: InventoryItem): ItemFormValues {
   return {
     categoryId: String(item.category.id),
+    ingredientId: item.ingredient ? String(item.ingredient.id) : '',
     name: item.name,
     brand: item.brand ?? '',
     unitType: item.unitType,
@@ -86,6 +90,7 @@ export function toRequest(values: ItemFormValues): InventoryItemRequest {
   const volume = values.unitType === 'VOLUME'
   return {
     categoryId: Number(values.categoryId),
+    ingredientId: values.ingredientId ? Number(values.ingredientId) : undefined,
     name: values.name,
     brand: values.brand || undefined,
     abv: volume && values.abv !== '' ? parseNumberInput(values.abv) : undefined,
@@ -100,6 +105,8 @@ const serverMessages: Record<string, string> = {
   'must not be greater than capacity': 'Kan inte vara mer än storleken',
   'must be a subcategory': 'Välj en underkategori',
   'category does not exist': 'Kategorin finns inte',
+  'ingredient does not belong to the category': 'Ingrediensen hör inte till kategorin',
+  'ingredient does not exist': 'Ingrediensen finns inte',
 }
 
 /** Translates a backend validation message (English) to Swedish. */

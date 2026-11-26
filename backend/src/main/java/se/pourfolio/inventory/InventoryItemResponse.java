@@ -6,11 +6,13 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 import se.pourfolio.category.CategorySummary;
+import se.pourfolio.ingredient.IngredientSummary;
 
 @Schema(requiredProperties = {"id", "category", "name", "unitType", "capacity", "remaining", "createdAt", "updatedAt"})
 public record InventoryItemResponse(
         Long id,
         CategorySummary category,
+        IngredientSummary ingredient,
         String name,
         String brand,
         BigDecimal abv,
@@ -25,6 +27,7 @@ public record InventoryItemResponse(
         return new InventoryItemResponse(
                 item.getId(),
                 CategorySummary.from(item.getCategory()),
+                item.getIngredient() == null ? null : IngredientSummary.from(item.getIngredient()),
                 item.getName(),
                 item.getBrand(),
                 item.getAbv(),

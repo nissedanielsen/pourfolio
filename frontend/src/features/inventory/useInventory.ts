@@ -42,6 +42,8 @@ function useInvalidateInventory() {
   return async () => {
     await queryClient.cancelQueries({ queryKey: inventoryKey })
     await queryClient.invalidateQueries({ queryKey: inventoryKey })
+    // Drink suggestions depend on what's at home.
+    await queryClient.invalidateQueries({ queryKey: ['recipes'] })
   }
 }
 

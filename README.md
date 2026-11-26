@@ -1,7 +1,7 @@
 # Pourfolio
 
-Inventarie för drycker hemma – sprit, likör, mixers, färskvaror med mera.
-Senare ska appen kunna föreslå drinkar utifrån det som finns hemma.
+Inventarie för drycker hemma – sprit, likör, mixers, färskvaror med mera – och förslag på
+drinkar utifrån det som finns hemma.
 
 ## Struktur
 
@@ -39,6 +39,21 @@ försök inom en minut spärras inloggningen tillfälligt (429).
 
 Byt `AUTH_TOKEN_SECRET` för att logga ut alla enheter direkt.
 
+## Drinkförslag
+
+Appen har en startsamling med drygt 40 klassiska recept (migreringen `V5__create_recipe.sql`)
+och jämför dem med inventariet:
+
+- **Ingredienser** – en flaska kan ange vilken ingrediens den är (t.ex. Campari, söt vermouth,
+  lime). Formuläret gissar ingrediensen från namnet. Receptrader kräver antingen en viss
+  ingrediens eller valfri vara i en kategori ("valfri gin").
+- **Ersättningar** – t.ex. bourbon ↔ rye, sockerlag ↔ socker.
+- **Volym** – mängderna jämförs i ml och appen räknar ut hur många drinkar det räcker till.
+  Citrusfrukter räknas om till juice (en lime ≈ 3 cl), andra styckvaror (t.ex. burkar tonic)
+  räknas som en portion per styck. Stänk och "fyll upp" kräver bara att något finns.
+- **Alltid hemma** – is, vatten, sodavatten, socker, sockerlag och salt behöver inte registreras.
+- **Köptips** – vad som skulle göra flest nya drinkar möjliga, bland recept som bara saknar en sak.
+
 ## API
 
 Lokalt finns dokumentationen på <http://localhost:8080/swagger-ui.html> (logga in via
@@ -56,6 +71,10 @@ Lokalt finns dokumentationen på <http://localhost:8080/swagger-ui.html> (logga 
 | `PUT`    | `/api/inventory-items/{id}`           | Ersätt                                                                                              |
 | `PATCH`  | `/api/inventory-items/{id}/remaining` | Uppdatera mängd kvar                                                                                |
 | `DELETE` | `/api/inventory-items/{id}`           | Ta bort                                                                                             |
+| `GET`    | `/api/ingredients`                    | Alla ingredienser                                                                                   |
+| `GET`    | `/api/recipes`                        | Recept matchade mot inventariet; `filter` = `ALL`, `CAN_MAKE` eller `MISSING_ONE`                   |
+| `GET`    | `/api/recipes/{id}`                   | Recept med status per ingrediens                                                                    |
+| `GET`    | `/api/recipes/shopping-suggestions`   | Köptips                                                                                             |
 
 Mängder lagras i ml för `VOLUME` och i styck för `COUNT`; frontend visar volymer i cl.
 Fel returneras som RFC 9457 problem details, med fältfel i `errors`.

@@ -1,6 +1,13 @@
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
-import type { Category, InventoryItem, InventoryItemRequest } from '../api/client'
+import type {
+  Category,
+  Ingredient,
+  InventoryItem,
+  InventoryItemRequest,
+  RecipeDetail,
+  RecipeSummary,
+} from '../api/client'
 
 export const categories: Category[] = [
   {
@@ -19,6 +26,109 @@ export const categories: Category[] = [
     children: [{ id: 21, code: 'citrus', name: 'Citrus', children: [] }],
   },
 ]
+
+export const ingredients: Ingredient[] = [
+  { id: 501, code: 'lime', name: 'Lime / limejuice', categoryId: 21, alwaysAvailable: false },
+  { id: 502, code: 'lemon', name: 'Citron / citronjuice', categoryId: 21, alwaysAvailable: false },
+]
+
+/** Two recipes: one that can be made and one that misses tonic. */
+export const recipeSummaries: RecipeSummary[] = [
+  {
+    id: 1,
+    code: 'gimlet',
+    name: 'Gimlet',
+    description: 'Gin och lime, rakt och syrligt.',
+    canMake: true,
+    missingCount: 0,
+    servings: 3,
+    missing: [],
+  },
+  {
+    id: 2,
+    code: 'gin_tonic',
+    name: 'Gin & Tonic',
+    canMake: false,
+    missingCount: 1,
+    missing: [{ name: 'Tonic', status: 'MISSING' }],
+  },
+  {
+    id: 3,
+    code: 'negroni',
+    name: 'Negroni',
+    canMake: false,
+    missingCount: 2,
+    missing: [
+      { name: 'Campari', status: 'NOT_ENOUGH', measure: 'ML', needed: 30, available: 20 },
+      { name: 'Söt vermouth', status: 'MISSING' },
+    ],
+  },
+]
+
+export const gimletDetail: RecipeDetail = {
+  id: 1,
+  code: 'gimlet',
+  name: 'Gimlet',
+  description: 'Gin och lime, rakt och syrligt.',
+  method: 'Skaka alla ingredienser med is och sila upp i ett kylt glas.',
+  glass: 'Coupe',
+  garnish: 'Limehjul',
+  canMake: true,
+  missingCount: 0,
+  servings: 3,
+  lines: [
+    {
+      position: 1,
+      amount: 60,
+      unit: 'ML',
+      name: 'Gin',
+      anyOfCategory: true,
+      optional: false,
+      status: 'OK',
+      measure: 'ML',
+      needed: 60,
+      available: 520,
+      usesSubstitute: false,
+      matchedItems: [{ id: 1, name: 'Tanqueray London Dry' }],
+    },
+    {
+      position: 2,
+      amount: 20,
+      unit: 'ML',
+      name: 'Lime / limejuice',
+      anyOfCategory: false,
+      optional: false,
+      status: 'NOT_ENOUGH',
+      measure: 'ML',
+      needed: 20,
+      available: 10,
+      usesSubstitute: false,
+      matchedItems: [{ id: 7, name: 'Limejuice' }],
+    },
+    {
+      position: 3,
+      amount: undefined,
+      unit: 'TOP_UP',
+      name: 'Sodavatten',
+      anyOfCategory: false,
+      optional: false,
+      status: 'ALWAYS_AVAILABLE',
+      usesSubstitute: false,
+      matchedItems: [],
+    },
+    {
+      position: 4,
+      amount: 1,
+      unit: 'PIECE',
+      name: 'Mynta',
+      anyOfCategory: false,
+      optional: true,
+      status: 'MISSING',
+      usesSubstitute: false,
+      matchedItems: [],
+    },
+  ],
+}
 
 export function makeItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
   return {
@@ -73,6 +183,30 @@ export function createFakeBackend(initial: InventoryItem[]) {
       return undefined
     }),
     http.get('*/api/categories', () => HttpResponse.json(categories)),
+    http.get('*/api/ingredients', () => HttpResponse.json(ingredients)),
+    http.get('*/api/recipes/shopping-suggestions', () =>
+      HttpResponse.json([
+        { name: 'Tonic', recipeCount: 1, recipes: [{ id: 2, name: 'Gin & Tonic' }] },
+      ]),
+    ),
+    http.get('*/api/recipes/:id', ({ params }) =>
+      Number(params.id) === gimletDetail.id
+        ? HttpResponse.json(gimletDetail)
+        : HttpResponse.json({ status: 404 }, { status: 404 }),
+    ),
+    http.get('*/api/recipes', ({ request }) => {
+      const url = new URL(request.url)
+      requests.push({ method: 'GET', url })
+      const filter = url.searchParams.get('filter') ?? 'ALL'
+      return HttpResponse.json(
+        recipeSummaries.filter(
+          (r) =>
+            filter === 'ALL' ||
+            (filter === 'CAN_MAKE' && r.canMake) ||
+            (filter === 'MISSING_ONE' && r.missingCount === 1),
+        ),
+      )
+    }),
     http.get('*/api/inventory-items', ({ request }) => {
       const url = new URL(request.url)
       requests.push({ method: 'GET', url })

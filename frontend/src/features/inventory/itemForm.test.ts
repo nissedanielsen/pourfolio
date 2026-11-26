@@ -64,6 +64,7 @@ describe('form conversion', () => {
     const parsed = itemFormSchema.parse(valid)
     expect(toRequest(parsed)).toEqual({
       categoryId: 17,
+      ingredientId: undefined,
       name: 'Tanqueray',
       brand: undefined,
       abv: 43.1,
@@ -103,6 +104,7 @@ describe('form conversion', () => {
     }
     expect(toFormValues(item)).toEqual({
       categoryId: '17',
+      ingredientId: '',
       name: 'Tanqueray',
       brand: '',
       unitType: 'VOLUME',

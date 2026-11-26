@@ -68,6 +68,70 @@ export interface paths {
     patch: operations['updateRemaining']
     trace?: never
   }
+  '/api/recipes': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/recipes/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_1']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/recipes/shopping-suggestions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['shoppingSuggestions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/ingredients': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_1']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/categories': {
     parameters: {
       query?: never
@@ -117,6 +181,8 @@ export interface components {
       /** Format: int32 */
       remaining: number
       notes?: string
+      /** Format: int64 */
+      ingredientId?: number
     }
     CategorySummary: {
       /** Format: int64 */
@@ -126,10 +192,17 @@ export interface components {
       /** Format: int64 */
       parentId?: number
     }
+    IngredientSummary: {
+      /** Format: int64 */
+      id: number
+      code: string
+      name: string
+    }
     InventoryItemResponse: {
       /** Format: int64 */
       id: number
       category: components['schemas']['CategorySummary']
+      ingredient?: components['schemas']['IngredientSummary']
       name: string
       brand?: string
       abv?: number
@@ -158,6 +231,79 @@ export interface components {
       /** Format: int32 */
       remaining: number
     }
+    RecipeSummary: {
+      /** Format: int64 */
+      id: number
+      code: string
+      name: string
+      description?: string
+      glass?: string
+      canMake: boolean
+      /** Format: int32 */
+      missingCount: number
+      /** Format: int32 */
+      servings?: number
+      missing: components['schemas']['Shortfall'][]
+    }
+    Shortfall: {
+      name: string
+      /** @enum {string} */
+      status: 'OK' | 'ALWAYS_AVAILABLE' | 'MISSING' | 'NOT_ENOUGH'
+      /** @enum {string} */
+      measure?: 'ML' | 'PIECES'
+      needed?: number
+      available?: number
+    }
+    MatchedItem: {
+      /** Format: int64 */
+      id: number
+      name: string
+    }
+    RecipeDetail: {
+      /** Format: int64 */
+      id: number
+      code: string
+      name: string
+      description?: string
+      method: string
+      glass?: string
+      garnish?: string
+      canMake: boolean
+      /** Format: int32 */
+      missingCount: number
+      /** Format: int32 */
+      servings?: number
+      lines: components['schemas']['RecipeLine'][]
+    }
+    RecipeLine: {
+      /** Format: int32 */
+      position: number
+      amount?: number
+      /** @enum {string} */
+      unit: 'ML' | 'DASH' | 'TSP' | 'PIECE' | 'TOP_UP'
+      name: string
+      anyOfCategory: boolean
+      optional: boolean
+      /** @enum {string} */
+      status: 'OK' | 'ALWAYS_AVAILABLE' | 'MISSING' | 'NOT_ENOUGH'
+      /** @enum {string} */
+      measure?: 'ML' | 'PIECES'
+      needed?: number
+      available?: number
+      usesSubstitute: boolean
+      matchedItems: components['schemas']['MatchedItem'][]
+    }
+    RecipeRef: {
+      /** Format: int64 */
+      id: number
+      name: string
+    }
+    ShoppingSuggestion: {
+      name: string
+      /** Format: int32 */
+      recipeCount: number
+      recipes: components['schemas']['RecipeRef'][]
+    }
     PageResponseInventoryItemResponse: {
       content: components['schemas']['InventoryItemResponse'][]
       /** Format: int32 */
@@ -168,6 +314,15 @@ export interface components {
       totalElements: number
       /** Format: int32 */
       totalPages: number
+    }
+    IngredientResponse: {
+      /** Format: int64 */
+      id: number
+      code: string
+      name: string
+      /** Format: int64 */
+      categoryId: number
+      alwaysAvailable: boolean
     }
     CategoryResponse: {
       /** Format: int64 */
@@ -359,6 +514,90 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['InventoryItemResponse']
+        }
+      }
+    }
+  }
+  list: {
+    parameters: {
+      query?: {
+        filter?: 'ALL' | 'CAN_MAKE' | 'MISSING_ONE'
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RecipeSummary'][]
+        }
+      }
+    }
+  }
+  get_1: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RecipeDetail']
+        }
+      }
+    }
+  }
+  shoppingSuggestions: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ShoppingSuggestion'][]
+        }
+      }
+    }
+  }
+  list_1: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['IngredientResponse'][]
         }
       }
     }

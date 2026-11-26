@@ -23,5 +23,7 @@ public record InventoryItemRequest(
         @NotNull UnitType unitType,
         @NotNull @Positive Integer capacity,
         @NotNull @PositiveOrZero Integer remaining,
-        @Size(max = 2000) String notes) {
+        @Size(max = 2000) String notes,
+        /** Optional: which ingredient this is, so recipes can be matched. Must be in the same category. */
+        Long ingredientId) {
 }

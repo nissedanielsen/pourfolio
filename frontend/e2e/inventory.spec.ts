@@ -34,6 +34,19 @@ test('sign in, add, find, adjust, edit, delete and sign out', async ({ page }, t
   await expect(page.getByText(`${name} har lagts till`)).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Inventarie' })).toBeVisible()
 
+  // The new gin counts towards drinks that take any gin
+  await page.getByRole('link', { name: 'Drinkar' }).click()
+  await expect(page.getByRole('heading', { name: 'Drinkar', level: 1 })).toBeVisible()
+  await page.getByRole('button', { name: 'Alla' }).click()
+  await page.getByRole('searchbox', { name: 'Sök drink' }).fill('Gimlet')
+  await page.getByRole('article', { name: 'Gimlet' }).click()
+  await expect(page.getByRole('heading', { name: 'Gimlet', level: 1 })).toBeVisible()
+  await expect(
+    page.getByRole('listitem', { name: 'Gin (valfri sort): Finns hemma' }),
+  ).toContainText(name)
+  await page.getByRole('link', { name: 'Inventarie' }).click()
+  await expect(page.getByRole('heading', { name: 'Inventarie' })).toBeVisible()
+
   // Find it with search
   await page.getByRole('searchbox', { name: 'Sök' }).fill(name)
   await expect(page).toHaveURL(/q=E2E/)

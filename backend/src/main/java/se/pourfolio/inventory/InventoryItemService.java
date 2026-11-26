@@ -14,6 +14,8 @@ import se.pourfolio.category.CategoryService;
 import se.pourfolio.common.web.InvalidRequestException;
 import se.pourfolio.common.web.NotFoundException;
 import se.pourfolio.common.web.PageResponse;
+import se.pourfolio.ingredient.Ingredient;
+import se.pourfolio.ingredient.IngredientRepository;
 
 @Service
 @Transactional
@@ -21,10 +23,13 @@ public class InventoryItemService {
 
     private final InventoryItemRepository repository;
     private final CategoryService categoryService;
+    private final IngredientRepository ingredientRepository;
 
-    public InventoryItemService(InventoryItemRepository repository, CategoryService categoryService) {
+    public InventoryItemService(InventoryItemRepository repository, CategoryService categoryService,
+            IngredientRepository ingredientRepository) {
         this.repository = repository;
         this.categoryService = categoryService;
+        this.ingredientRepository = ingredientRepository;
     }
 
     @Transactional(readOnly = true)
@@ -40,18 +45,22 @@ public class InventoryItemService {
 
     public InventoryItemResponse create(InventoryItemRequest request) {
         validate(request);
-        InventoryItem item = new InventoryItem(resolveCategory(request.categoryId()), request.name().trim(),
+        Category category = resolveCategory(request.categoryId());
+        InventoryItem item = new InventoryItem(category, request.name().trim(),
                 trimToNull(request.brand()), request.abv(), request.unitType(), request.capacity(),
                 request.remaining(), trimToNull(request.notes()));
+        item.setIngredient(resolveIngredient(request.ingredientId(), category));
         return InventoryItemResponse.from(repository.saveAndFlush(item));
     }
 
     public InventoryItemResponse update(Long id, InventoryItemRequest request) {
         InventoryItem item = find(id);
         validate(request);
-        item.update(resolveCategory(request.categoryId()), request.name().trim(), trimToNull(request.brand()),
+        Category category = resolveCategory(request.categoryId());
+        item.update(category, request.name().trim(), trimToNull(request.brand()),
                 request.abv(), request.unitType(), request.capacity(), request.remaining(),
                 trimToNull(request.notes()));
+        item.setIngredient(resolveIngredient(request.ingredientId(), category));
         return InventoryItemResponse.from(repository.saveAndFlush(item));
     }
 
@@ -91,6 +100,19 @@ public class InventoryItemService {
             throw new InvalidRequestException("categoryId", "must be a subcategory");
         }
         return category;
+    }
+
+    /** The optional ingredient must exist and belong to the item's category. */
+    private Ingredient resolveIngredient(Long ingredientId, Category category) {
+        if (ingredientId == null) {
+            return null;
+        }
+        Ingredient ingredient = ingredientRepository.findById(ingredientId)
+                .orElseThrow(() -> new InvalidRequestException("ingredientId", "ingredient does not exist"));
+        if (!ingredient.getCategory().getId().equals(category.getId())) {
+            throw new InvalidRequestException("ingredientId", "ingredient does not belong to the category");
+        }
+        return ingredient;
     }
 
     private Specification<InventoryItem> toSpecification(InventoryItemSearchCriteria criteria) {

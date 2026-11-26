@@ -11,13 +11,15 @@ import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
+import { useRef } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useLocation, useNavigate, useParams } from 'react-router'
-import { ApiError, type Category, type InventoryItem } from '../../api/client'
+import { ApiError, type Category, type Ingredient, type InventoryItem } from '../../api/client'
 import { useNotify } from '../../components/notify'
 import { unitLabel } from '../../lib/units'
 import { CategorySelect } from '../categories/CategorySelect'
 import { useCategories } from '../categories/useCategories'
+import { guessIngredient, useIngredients } from '../ingredients/useIngredients'
 import {
   emptyItemForm,
   itemFormSchema,
@@ -37,6 +39,7 @@ export function ItemFormPage() {
   const itemId = Number(id)
   const item = useInventoryItem(itemId, { enabled: !isNew })
   const categories = useCategories()
+  const ingredients = useIngredients()
 
   if (!isNew && Number.isNaN(itemId)) {
     return <Alert severity="error">Ogiltig adress.</Alert>
@@ -47,21 +50,36 @@ export function ItemFormPage() {
       <Alert severity="error">{notFound ? 'Posten finns inte.' : 'Kunde inte hämta posten.'}</Alert>
     )
   }
-  if (categories.isError) {
+  if (categories.isError || ingredients.isError) {
     return <Alert severity="error">Kunde inte hämta kategorierna.</Alert>
   }
   // Render the form only when everything it needs is loaded, so nothing changes under the user.
-  if ((!isNew && !item.data) || !categories.data) {
+  if ((!isNew && !item.data) || !categories.data || !ingredients.data) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
         <CircularProgress aria-label="Laddar" />
       </Box>
     )
   }
-  return <ItemForm key={id ?? 'new'} item={item.data} categories={categories.data} />
+  return (
+    <ItemForm
+      key={id ?? 'new'}
+      item={item.data}
+      categories={categories.data}
+      ingredients={ingredients.data}
+    />
+  )
 }
 
-function ItemForm({ item, categories }: { item?: InventoryItem; categories: Category[] }) {
+function ItemForm({
+  item,
+  categories,
+  ingredients,
+}: {
+  item?: InventoryItem
+  categories: Category[]
+  ingredients: Ingredient[]
+}) {
   const navigate = useNavigate()
   const location = useLocation()
   const notify = useNotify()
@@ -75,6 +93,7 @@ function ItemForm({ item, categories }: { item?: InventoryItem; categories: Cate
     setValue,
     setError,
     getFieldState,
+    getValues,
     formState: { isSubmitting },
   } = useForm<ItemFormValues>({
     resolver: zodResolver(itemFormSchema),
@@ -82,6 +101,23 @@ function ItemForm({ item, categories }: { item?: InventoryItem; categories: Cate
   })
   const unitType = useWatch({ control, name: 'unitType' })
   const unit = unitLabel(unitType)
+  const categoryId = useWatch({ control, name: 'categoryId' })
+  const ingredientId = useWatch({ control, name: 'ingredientId' })
+  const ingredientsInCategory = ingredients.filter((i) => String(i.categoryId) === categoryId)
+
+  // Guess the ingredient from the name and category ("Campari Bitter" -> Campari) until the
+  // user picks one, but never override an ingredient an existing item already has.
+  const autoIngredient = useRef(!item?.ingredient)
+  const updateIngredientGuess = (nextCategoryId: string, nextName: string) => {
+    const current = ingredients.find((i) => String(i.id) === ingredientId)
+    if (current && String(current.categoryId) !== nextCategoryId) {
+      // The chosen ingredient doesn't belong to the new category.
+      setValue('ingredientId', '')
+    }
+    if (!autoIngredient.current) return
+    const guess = guessIngredient(ingredients, Number(nextCategoryId), nextName)
+    setValue('ingredientId', guess ? String(guess.id) : '')
+  }
 
   // While the user hasn't touched "remaining", keep it equal to the size (a full bottle).
   const setCapacity = (value: string) => {
@@ -158,7 +194,10 @@ function ItemForm({ item, categories }: { item?: InventoryItem; categories: Cate
               required
               categories={categories}
               value={field.value}
-              onChange={field.onChange}
+              onChange={(value) => {
+                field.onChange(value)
+                updateIngredientGuess(value, getValues('name'))
+              }}
               onBlur={field.onBlur}
               inputRef={field.ref}
               error={!!fieldState.error}
@@ -173,6 +212,10 @@ function ItemForm({ item, categories }: { item?: InventoryItem; categories: Cate
           render={({ field, fieldState }) => (
             <TextField
               {...field}
+              onChange={(event) => {
+                field.onChange(event)
+                updateIngredientGuess(getValues('categoryId'), event.target.value)
+              }}
               label="Namn"
               required
               placeholder={unitType === 'VOLUME' ? 't.ex. Tanqueray London Dry' : 't.ex. Lime'}
@@ -181,6 +224,40 @@ function ItemForm({ item, categories }: { item?: InventoryItem; categories: Cate
             />
           )}
         />
+
+        {ingredientsInCategory.length > 0 && (
+          <Controller
+            control={control}
+            name="ingredientId"
+            render={({ field, fieldState }) => (
+              <TextField
+                select
+                label="Ingrediens (för drinkförslag)"
+                value={field.value}
+                onChange={(event) => {
+                  // A manual choice stops the automatic guessing.
+                  autoIngredient.current = false
+                  field.onChange(event.target.value)
+                }}
+                onBlur={field.onBlur}
+                inputRef={field.ref}
+                error={!!fieldState.error}
+                helperText={
+                  fieldState.error?.message ??
+                  'Vad är det här? Då kan appen föreslå drinkar med den.'
+                }
+                slotProps={{ inputLabel: { shrink: true }, select: { native: true } }}
+              >
+                <option value="">Ingen särskild</option>
+                {ingredientsInCategory.map((ingredient) => (
+                  <option key={ingredient.id} value={String(ingredient.id)}>
+                    {ingredient.name}
+                  </option>
+                ))}
+              </TextField>
+            )}
+          />
+        )}
 
         <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '2fr 1fr' } }}>
           <Controller

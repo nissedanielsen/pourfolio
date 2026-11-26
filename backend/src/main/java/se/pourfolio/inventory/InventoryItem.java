@@ -19,6 +19,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import se.pourfolio.category.Category;
+import se.pourfolio.ingredient.Ingredient;
 
 /**
  * Something physical at home: a bottle, a can, or a number of pieces.
@@ -36,6 +37,11 @@ public class InventoryItem {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    /** Which ingredient this is (optional), used to match recipes. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ingredient_id")
+    private Ingredient ingredient;
 
     private String name;
 
@@ -81,6 +87,14 @@ public class InventoryItem {
         this.capacity = capacity;
         this.remaining = remaining;
         this.notes = notes;
+    }
+
+    public void setIngredient(Ingredient ingredient) {
+        this.ingredient = ingredient;
+    }
+
+    public Ingredient getIngredient() {
+        return ingredient;
     }
 
     public void setRemaining(int remaining) {
