@@ -2,6 +2,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
 import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
+import { AuthProvider } from './auth/AuthProvider'
 import { NotificationProvider } from './components/NotificationProvider'
 import { theme } from './theme'
 
@@ -17,7 +18,9 @@ export function AppProviders({
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
-        <NotificationProvider>{children}</NotificationProvider>
+        <AuthProvider>
+          <NotificationProvider>{children}</NotificationProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   )

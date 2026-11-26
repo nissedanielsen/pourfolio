@@ -36,13 +36,42 @@ export function makeItem(overrides: Partial<InventoryItem> = {}): InventoryItem 
   }
 }
 
+export const TEST_USER = { username: 'pourfolio', password: 'hemligt' }
+export const TEST_TOKEN = 'test-token'
+
 /** A tiny in-memory backend good enough for UI tests. */
 export function createFakeBackend(initial: InventoryItem[]) {
   let items = [...initial]
   let nextId = Math.max(0, ...items.map((i) => i.id)) + 1
   const requests: { method: string; url: URL; body?: unknown }[] = []
+  // Tokens the fake backend accepts; tests can revoke them to simulate expiry.
+  const validTokens = new Set([TEST_TOKEN])
 
   const handlers = [
+    http.post('*/api/auth/login', async ({ request }) => {
+      const body = (await request.json()) as { username: string; password: string }
+      requests.push({ method: 'POST', url: new URL(request.url), body })
+      if (body.username !== TEST_USER.username || body.password !== TEST_USER.password) {
+        return HttpResponse.json(
+          { status: 401, detail: 'Wrong user name or password' },
+          { status: 401 },
+        )
+      }
+      return HttpResponse.json({
+        token: TEST_TOKEN,
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+    }),
+    // Everything else requires a valid token, like the real backend.
+    http.all('*/api/*', ({ request }) => {
+      const token = request.headers.get('Authorization')?.replace(/^Bearer /, '')
+      if (!token || !validTokens.has(token)) {
+        requests.push({ method: request.method, url: new URL(request.url) })
+        return HttpResponse.json({ status: 401 }, { status: 401 })
+      }
+      // Fall through to the matching handler below.
+      return undefined
+    }),
     http.get('*/api/categories', () => HttpResponse.json(categories)),
     http.get('*/api/inventory-items', ({ request }) => {
       const url = new URL(request.url)
@@ -78,7 +107,7 @@ export function createFakeBackend(initial: InventoryItem[]) {
     }),
   ]
 
-  return { handlers, requests }
+  return { handlers, requests, revokeTokens: () => validTokens.clear() }
 }
 
 export const server = setupServer()

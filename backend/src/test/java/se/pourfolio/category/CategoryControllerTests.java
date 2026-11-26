@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import se.pourfolio.TestcontainersConfiguration;
@@ -19,6 +20,8 @@ import se.pourfolio.TestcontainersConfiguration;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
 @AutoConfigureMockMvc
+// The API requires sign-in; these tests are about the API itself (see AuthControllerTests).
+@WithMockUser
 class CategoryControllerTests {
 
     @Autowired

@@ -46,7 +46,22 @@ management:
         # /actuator/health still includes the database check for manual diagnostics.
         enabled: true
 
+springdoc:
+  # API documentation is off unless enabled (it is in application-local.yml).
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:false}
+  swagger-ui:
+    enabled: ${API_DOCS_ENABLED:false}
+
 pourfolio:
   cors:
     # Comma-separated list of origins allowed to call /api/** (e.g. the Vercel frontend URL).
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  auth:
+    # The single user's credentials and the token signing secret. No defaults: the app
+    # refuses to start without them (development values are in application-local.yml).
+    username: ${AUTH_USERNAME:}
+    password: ${AUTH_PASSWORD:}
+    # At least 32 characters. Changing it signs out every device.
+    token-secret: ${AUTH_TOKEN_SECRET:}
+    token-ttl: 24h

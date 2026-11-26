@@ -1,0 +1,12 @@
+# Test-only settings, merged on top of src/main/resources/application.yml.
+pourfolio:
+  auth:
+    username: test-user
+    password: test-password
+    token-secret: test-secret-that-is-at-least-32-characters-long
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

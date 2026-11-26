@@ -1,4 +1,5 @@
 import createClient from 'openapi-fetch'
+import { clearSession, loadSession } from '../auth/session'
 import type { components, paths } from './schema'
 
 export type Schemas = components['schemas']
@@ -16,6 +17,26 @@ export const api = createClient<paths>({
   baseUrl,
   // Look up fetch per call (not at import time) so test mocks can intercept it.
   fetch: (request) => globalThis.fetch(request),
+})
+
+const LOGIN_PATH = '/api/auth/login'
+
+api.use({
+  // Send the sign-in token with every call.
+  onRequest({ request }) {
+    const session = loadSession()
+    if (session && !request.url.endsWith(LOGIN_PATH)) {
+      request.headers.set('Authorization', `Bearer ${session.token}`)
+    }
+    return request
+  },
+  // A 401 on any other call means the token is no longer accepted: sign out.
+  onResponse({ request, response }) {
+    if (response.status === 401 && !request.url.endsWith(LOGIN_PATH)) {
+      clearSession('expired')
+    }
+    return response
+  },
 })
 
 /** An error response from the backend, parsed from RFC 9457 problem details. */

@@ -5,12 +5,24 @@ import { expect, test } from '@playwright/test'
 //
 // One full journey through the app. Uses a unique name so it can run against a
 // database that already has data, and cleans up after itself by deleting the item.
-test('add, find, adjust, edit and delete an item', async ({ page }, testInfo) => {
+//
+// Credentials default to the development ones in backend/src/main/resources/application-local.yml.
+const USERNAME = process.env.E2E_USERNAME ?? 'pourfolio'
+const PASSWORD = process.env.E2E_PASSWORD ?? 'pourfolio'
+
+test('sign in, add, find, adjust, edit, delete and sign out', async ({ page }, testInfo) => {
   const name = `E2E Gin ${testInfo.project.name} ${Date.now()}`
   const renamed = `${name} (ändrad)`
 
-  // Add
+  // Sign in (the app sends signed-out users to the login page)
   await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Logga in' })).toBeVisible()
+  await page.getByLabel('Användarnamn').fill(USERNAME)
+  await page.getByLabel('Lösenord').fill(PASSWORD)
+  await page.getByRole('button', { name: 'Logga in' }).click()
+  await expect(page.getByRole('heading', { name: 'Inventarie' })).toBeVisible()
+
+  // Add
   await page.getByRole('link', { name: 'Lägg till', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Lägg till' })).toBeVisible()
   await page.getByRole('combobox', { name: /Kategori/ }).selectOption({ label: 'Gin' })
@@ -68,4 +80,10 @@ test('add, find, adjust, edit and delete an item', async ({ page }, testInfo) =>
   await page.getByRole('dialog').getByRole('button', { name: 'Ta bort' }).click()
   await expect(page.getByText(`${renamed} har tagits bort`)).toBeVisible()
   await expect(page.getByText('Inget matchar filtret.')).toBeVisible()
+
+  // Sign out: the inventory is no longer reachable, even after a reload
+  await page.getByRole('button', { name: 'Logga ut' }).click()
+  await expect(page.getByRole('heading', { name: 'Logga in' })).toBeVisible()
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Logga in' })).toBeVisible()
 })

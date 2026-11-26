@@ -1,0 +1,13 @@
+# Local development and the E2E tests (activated by `mvnw spring-boot:run`).
+# Never used by the packaged jar or the Docker image.
+pourfolio:
+  auth:
+    username: ${AUTH_USERNAME:pourfolio}
+    password: ${AUTH_PASSWORD:pourfolio}
+    token-secret: ${AUTH_TOKEN_SECRET:local-development-secret-not-for-production}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
