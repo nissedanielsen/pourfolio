@@ -130,6 +130,10 @@ Google Cloud Run) och sätt:
   $b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
   ```
 
+Imagen är optimerad för snabb start på små instanser: JVM-flaggor för få CPU:er och
+Class Data Sharing (ett klassarkiv som skapas vid bygget). Med 0,1 CPU startar Spring på
+cirka 56 s i stället för 173 s. Flaggorna kan ändras via `JAVA_TOOL_OPTIONS`.
+
 `PORT` sätts normalt av tjänsten. Använd `/actuator/health/liveness` som hälsokontroll i
 tjänsten – den frågar inte databasen, så täta kontroller håller inte Neon vaken.
 `/actuator/health` kontrollerar även databasen och passar för manuell felsökning.
