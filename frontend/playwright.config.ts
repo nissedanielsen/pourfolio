@@ -30,6 +30,8 @@ export default defineConfig({
           ? String.raw`.\mvnw.cmd -B -q spring-boot:run`
           : './mvnw -B -q spring-boot:run',
       cwd: '../backend',
+      // Barcode lookups must not depend on the real Open Food Facts in tests.
+      env: { OPEN_FOOD_FACTS_ENABLED: 'false' },
       url: 'http://localhost:8080/actuator/health',
       reuseExistingServer: !ci,
       timeout: 180_000,

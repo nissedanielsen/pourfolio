@@ -112,6 +112,7 @@ describe('form conversion', () => {
       capacity: '70',
       remaining: '37,5',
       notes: '',
+      barcode: '',
     })
   })
 })

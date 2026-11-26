@@ -59,6 +59,9 @@ public class InventoryItem {
 
     private String notes;
 
+    /** EAN/GTIN barcode, if known. */
+    private String barcode;
+
     @CreationTimestamp
     @Column(updatable = false)
     private Instant createdAt;
@@ -87,6 +90,14 @@ public class InventoryItem {
         this.capacity = capacity;
         this.remaining = remaining;
         this.notes = notes;
+    }
+
+    public void setBarcode(String barcode) {
+        this.barcode = barcode;
+    }
+
+    public String getBarcode() {
+        return barcode;
     }
 
     public void setIngredient(Ingredient ingredient) {

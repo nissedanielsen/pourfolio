@@ -54,6 +54,23 @@ och jämför dem med inventariet:
 - **Alltid hemma** – is, vatten, sodavatten, socker, sockerlag och salt behöver inte registreras.
 - **Köptips** – vad som skulle göra flest nya drinkar möjliga, bland recept som bara saknar en sak.
 
+## Streckkoder
+
+_Skanna_ på inventariesidan läser EAN-streckkoden med mobilkameran (eller från ett foto, eller
+inskriven för hand) och fyller i formuläret:
+
+1. **Du har redan flaskan** – välj att öppna den eller lägga till en ny.
+2. **Känd sedan tidigare** – uppgifterna från förra gången du sparade en flaska med koden.
+   Produkterna sparas i `known_product` och finns kvar även när flaskorna tagits bort.
+3. **Open Food Facts** – förslag från den öppna produktdatabasen
+   ([openfoodfacts.org](https://world.openfoodfacts.org), ODbL). Bara streckkoden skickas.
+   Datan är användarbidragen och ojämn, så förslaget ska kontrolleras.
+4. **Okänd** – formuläret med bara streckkoden ifylld.
+
+Läsningen sker i webbläsaren: inbyggd `BarcodeDetector` där den finns (Chrome på Android),
+annars en WebAssembly-version av ZXing (t.ex. Safari på iPhone). `.wasm`-filen serveras från
+appen själv och laddas först när skannern öppnas. Kameran kräver HTTPS (eller localhost).
+
 ## API
 
 Lokalt finns dokumentationen på <http://localhost:8080/swagger-ui.html> (logga in via
@@ -75,6 +92,7 @@ Lokalt finns dokumentationen på <http://localhost:8080/swagger-ui.html> (logga 
 | `GET`    | `/api/recipes`                        | Recept matchade mot inventariet; `filter` = `ALL`, `CAN_MAKE` eller `MISSING_ONE`                   |
 | `GET`    | `/api/recipes/{id}`                   | Recept med status per ingrediens                                                                    |
 | `GET`    | `/api/recipes/shopping-suggestions`   | Köptips                                                                                             |
+| `GET`    | `/api/barcodes/{barcode}`             | Det som är känt om en streckkod (egna flaskor, tidigare produkter, Open Food Facts)                 |
 
 Mängder lagras i ml för `VOLUME` och i styck för `COUNT`; frontend visar volymer i cl.
 Fel returneras som RFC 9457 problem details, med fältfel i `errors`.
@@ -109,17 +127,18 @@ ett produktionsbygge av frontend.
 
 Backend (miljövariabler, med standardvärden för lokal utveckling):
 
-| Variabel               | Standard                                     |
-| ---------------------- | -------------------------------------------- |
-| `DATABASE_URL`         | `jdbc:postgresql://localhost:5432/pourfolio` |
-| `DATABASE_USERNAME`    | `pourfolio`                                  |
-| `DATABASE_PASSWORD`    | `pourfolio`                                  |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173`                      |
-| `PORT`                 | `8080`                                       |
-| `AUTH_USERNAME`        | – (krävs; `pourfolio` lokalt)                |
-| `AUTH_PASSWORD`        | – (krävs; `pourfolio` lokalt)                |
-| `AUTH_TOKEN_SECRET`    | – (krävs, minst 32 tecken)                   |
-| `API_DOCS_ENABLED`     | `false` (på lokalt)                          |
+| Variabel                  | Standard                                     |
+| ------------------------- | -------------------------------------------- |
+| `DATABASE_URL`            | `jdbc:postgresql://localhost:5432/pourfolio` |
+| `DATABASE_USERNAME`       | `pourfolio`                                  |
+| `DATABASE_PASSWORD`       | `pourfolio`                                  |
+| `CORS_ALLOWED_ORIGINS`    | `http://localhost:5173`                      |
+| `PORT`                    | `8080`                                       |
+| `AUTH_USERNAME`           | – (krävs; `pourfolio` lokalt)                |
+| `AUTH_PASSWORD`           | – (krävs; `pourfolio` lokalt)                |
+| `AUTH_TOKEN_SECRET`       | – (krävs, minst 32 tecken)                   |
+| `API_DOCS_ENABLED`        | `false` (på lokalt)                          |
+| `OPEN_FOOD_FACTS_ENABLED` | `true` (av i tester och E2E)                 |
 
 Utan `AUTH_*` vägrar backend att starta, i stället för att köra utan skydd.
 

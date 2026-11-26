@@ -14,6 +14,7 @@ export type RecipeDetail = Schemas['RecipeDetail']
 export type RecipeLine = Schemas['RecipeLine']
 export type Shortfall = Schemas['Shortfall']
 export type ShoppingSuggestion = Schemas['ShoppingSuggestion']
+export type BarcodeLookup = Schemas['BarcodeLookupResponse']
 
 // Backend origin. Unset in development (Vite proxies /api to the local backend);
 // set VITE_API_URL when the frontend is hosted separately (e.g. on Vercel).

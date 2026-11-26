@@ -57,6 +57,10 @@ pourfolio:
   cors:
     # Comma-separated list of origins allowed to call /api/** (e.g. the Vercel frontend URL).
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  open-food-facts:
+    # Barcode lookups for products not seen before. Only the barcode is sent.
+    enabled: ${OPEN_FOOD_FACTS_ENABLED:true}
+    base-url: https://world.openfoodfacts.org
   auth:
     # The single user's credentials and the token signing secret. No defaults: the app
     # refuses to start without them (development values are in application-local.yml).

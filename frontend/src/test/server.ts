@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import type {
+  BarcodeLookup,
   Category,
   Ingredient,
   InventoryItem,
@@ -150,7 +151,10 @@ export const TEST_USER = { username: 'pourfolio', password: 'hemligt' }
 export const TEST_TOKEN = 'test-token'
 
 /** A tiny in-memory backend good enough for UI tests. */
-export function createFakeBackend(initial: InventoryItem[]) {
+export function createFakeBackend(
+  initial: InventoryItem[],
+  { barcodes = {} }: { barcodes?: Record<string, BarcodeLookup> } = {},
+) {
   let items = [...initial]
   let nextId = Math.max(0, ...items.map((i) => i.id)) + 1
   const requests: { method: string; url: URL; body?: unknown }[] = []
@@ -184,6 +188,18 @@ export function createFakeBackend(initial: InventoryItem[]) {
     }),
     http.get('*/api/categories', () => HttpResponse.json(categories)),
     http.get('*/api/ingredients', () => HttpResponse.json(ingredients)),
+    http.get('*/api/barcodes/:barcode', ({ params, request }) => {
+      requests.push({ method: 'GET', url: new URL(request.url) })
+      const barcode = String(params.barcode)
+      return HttpResponse.json(
+        barcodes[barcode] ?? {
+          barcode,
+          source: 'NONE',
+          existingItems: [],
+          externalLookupFailed: false,
+        },
+      )
+    }),
     http.get('*/api/recipes/shopping-suggestions', () =>
       HttpResponse.json([
         { name: 'Tonic', recipeCount: 1, recipes: [{ id: 2, name: 'Gin & Tonic' }] },
@@ -233,6 +249,10 @@ export function createFakeBackend(initial: InventoryItem[]) {
       })
       items.push(item)
       return HttpResponse.json(item, { status: 201 })
+    }),
+    http.get('*/api/inventory-items/:id', ({ params }) => {
+      const item = items.find((i) => i.id === Number(params.id))
+      return item ? HttpResponse.json(item) : HttpResponse.json({ status: 404 }, { status: 404 })
     }),
     http.delete('*/api/inventory-items/:id', ({ params, request }) => {
       requests.push({ method: 'DELETE', url: new URL(request.url) })

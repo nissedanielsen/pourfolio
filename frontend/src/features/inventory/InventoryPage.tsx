@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography'
 import { useState } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router'
 import type { InventoryItem } from '../../api/client'
+import { ScanButton } from '../barcode/ScanButton'
 import { useCategories } from '../categories/useCategories'
 import { AdjustRemainingDialog } from './AdjustRemainingDialog'
 import { DeleteItemDialog } from './DeleteItemDialog'
@@ -38,19 +39,32 @@ export function InventoryPage() {
 
   return (
     <>
-      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <Stack
+        direction="row"
+        useFlexGap
+        sx={{
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 1,
+          mb: 2,
+        }}
+      >
         <Typography variant="h4" component="h1">
           Inventarie
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          component={RouterLink}
-          to="/items/new"
-          state={{ returnTo }}
-        >
-          Lägg till
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <ScanButton returnTo={returnTo} />
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            component={RouterLink}
+            to="/items/new"
+            state={{ returnTo }}
+          >
+            Lägg till
+          </Button>
+        </Stack>
       </Stack>
 
       <InventoryFiltersBar

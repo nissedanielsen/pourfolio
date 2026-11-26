@@ -22,6 +22,10 @@ public interface InventoryItemRepository
     @EntityGraph(attributePaths = {"category", "ingredient"})
     Optional<InventoryItem> findById(Long id);
 
+    /** Items with the given barcode, e.g. to tell the user they already have it. */
+    @Query("select i from InventoryItem i join fetch i.category left join fetch i.ingredient where i.barcode = :barcode order by i.updatedAt desc")
+    List<InventoryItem> findByBarcode(String barcode);
+
     /** Items with something left, for matching recipes. */
     @Query("select i from InventoryItem i join fetch i.category left join fetch i.ingredient where i.remaining > 0")
     List<InventoryItem> findAllInStock();

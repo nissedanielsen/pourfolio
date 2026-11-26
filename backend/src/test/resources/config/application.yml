@@ -1,5 +1,8 @@
 # Test-only settings, merged on top of src/main/resources/application.yml.
 pourfolio:
+  # Tests never call the real Open Food Facts.
+  open-food-facts:
+    enabled: false
   auth:
     username: test-user
     password: test-password

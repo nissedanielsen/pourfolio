@@ -20,6 +20,7 @@ public record InventoryItemResponse(
         int capacity,
         int remaining,
         String notes,
+        String barcode,
         Instant createdAt,
         Instant updatedAt) {
 
@@ -35,6 +36,7 @@ public record InventoryItemResponse(
                 item.getCapacity(),
                 item.getRemaining(),
                 item.getNotes(),
+                item.getBarcode(),
                 item.getCreatedAt(),
                 item.getUpdatedAt());
     }

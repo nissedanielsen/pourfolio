@@ -148,6 +148,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/barcodes/{barcode}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['lookup']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/auth/me': {
     parameters: {
       query?: never
@@ -183,6 +199,7 @@ export interface components {
       notes?: string
       /** Format: int64 */
       ingredientId?: number
+      barcode?: string
     }
     CategorySummary: {
       /** Format: int64 */
@@ -213,6 +230,7 @@ export interface components {
       /** Format: int32 */
       remaining: number
       notes?: string
+      barcode?: string
       /** Format: date-time */
       createdAt: string
       /** Format: date-time */
@@ -330,6 +348,38 @@ export interface components {
       code: string
       name: string
       children: components['schemas']['CategoryResponse'][]
+    }
+    BarcodeLookupResponse: {
+      barcode: string
+      /** @enum {string} */
+      source: 'KNOWN_PRODUCT' | 'OPEN_FOOD_FACTS' | 'NONE'
+      suggestion?: components['schemas']['Suggestion']
+      existingItems: components['schemas']['ExistingItem'][]
+      externalLookupFailed: boolean
+    }
+    ExistingItem: {
+      /** Format: int64 */
+      id: number
+      name: string
+      /** @enum {string} */
+      unitType: 'VOLUME' | 'COUNT'
+      /** Format: int32 */
+      capacity: number
+      /** Format: int32 */
+      remaining: number
+    }
+    Suggestion: {
+      name: string
+      brand?: string
+      abv?: number
+      /** @enum {string} */
+      unitType: 'VOLUME' | 'COUNT'
+      /** Format: int32 */
+      capacity?: number
+      /** Format: int64 */
+      categoryId?: number
+      /** Format: int64 */
+      ingredientId?: number
     }
     CurrentUserResponse: {
       username: string
@@ -618,6 +668,28 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CategoryResponse'][]
+        }
+      }
+    }
+  }
+  lookup: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        barcode: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['BarcodeLookupResponse']
         }
       }
     }

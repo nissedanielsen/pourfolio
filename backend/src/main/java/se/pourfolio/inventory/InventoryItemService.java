@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import se.pourfolio.barcode.Gtin;
+import se.pourfolio.barcode.KnownProduct;
+import se.pourfolio.barcode.KnownProductRepository;
 import se.pourfolio.category.Category;
 import se.pourfolio.category.CategoryService;
 import se.pourfolio.common.web.InvalidRequestException;
@@ -24,12 +27,14 @@ public class InventoryItemService {
     private final InventoryItemRepository repository;
     private final CategoryService categoryService;
     private final IngredientRepository ingredientRepository;
+    private final KnownProductRepository knownProducts;
 
     public InventoryItemService(InventoryItemRepository repository, CategoryService categoryService,
-            IngredientRepository ingredientRepository) {
+            IngredientRepository ingredientRepository, KnownProductRepository knownProducts) {
         this.repository = repository;
         this.categoryService = categoryService;
         this.ingredientRepository = ingredientRepository;
+        this.knownProducts = knownProducts;
     }
 
     @Transactional(readOnly = true)
@@ -50,7 +55,10 @@ public class InventoryItemService {
                 trimToNull(request.brand()), request.abv(), request.unitType(), request.capacity(),
                 request.remaining(), trimToNull(request.notes()));
         item.setIngredient(resolveIngredient(request.ingredientId(), category));
-        return InventoryItemResponse.from(repository.saveAndFlush(item));
+        item.setBarcode(resolveBarcode(request.barcode()));
+        InventoryItem saved = repository.saveAndFlush(item);
+        rememberProduct(saved);
+        return InventoryItemResponse.from(saved);
     }
 
     public InventoryItemResponse update(Long id, InventoryItemRequest request) {
@@ -61,7 +69,10 @@ public class InventoryItemService {
                 request.abv(), request.unitType(), request.capacity(), request.remaining(),
                 trimToNull(request.notes()));
         item.setIngredient(resolveIngredient(request.ingredientId(), category));
-        return InventoryItemResponse.from(repository.saveAndFlush(item));
+        item.setBarcode(resolveBarcode(request.barcode()));
+        InventoryItem saved = repository.saveAndFlush(item);
+        rememberProduct(saved);
+        return InventoryItemResponse.from(saved);
     }
 
     public InventoryItemResponse updateRemaining(Long id, int remaining) {
@@ -100,6 +111,27 @@ public class InventoryItemService {
             throw new InvalidRequestException("categoryId", "must be a subcategory");
         }
         return category;
+    }
+
+    /** Blank means no barcode; anything else must be a valid GTIN. */
+    private static String resolveBarcode(String barcode) {
+        if (!StringUtils.hasText(barcode)) {
+            return null;
+        }
+        return Gtin.normalize(barcode)
+                .orElseThrow(() -> new InvalidRequestException("barcode", "invalid barcode"));
+    }
+
+    /** Remembers the product by barcode so scanning it again fills in the form. */
+    private void rememberProduct(InventoryItem item) {
+        if (item.getBarcode() == null) {
+            return;
+        }
+        KnownProduct product = knownProducts.findById(item.getBarcode())
+                .orElseGet(() -> new KnownProduct(item.getBarcode()));
+        product.update(item.getName(), item.getBrand(), item.getAbv(), item.getUnitType(), item.getCapacity(),
+                item.getCategory(), item.getIngredient());
+        knownProducts.save(product);
     }
 
     /** The optional ingredient must exist and belong to the item's category. */

@@ -25,5 +25,7 @@ public record InventoryItemRequest(
         @NotNull @PositiveOrZero Integer remaining,
         @Size(max = 2000) String notes,
         /** Optional: which ingredient this is, so recipes can be matched. Must be in the same category. */
-        Long ingredientId) {
+        Long ingredientId,
+        /** Optional EAN/GTIN barcode (8, 12, 13 or 14 digits with a valid check digit). */
+        @Size(max = 20) String barcode) {
 }

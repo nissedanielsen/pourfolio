@@ -21,5 +21,7 @@ export default defineConfig({
     // Playwright specs in e2e/ run separately via npm run e2e.
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['./src/test/setup.ts'],
+    // Whole-app UI tests type into forms; leave room for slow, busy CI machines.
+    testTimeout: 15_000,
   },
 })

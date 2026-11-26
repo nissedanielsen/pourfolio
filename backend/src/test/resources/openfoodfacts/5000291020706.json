@@ -1,0 +1,24 @@
+{
+  "code": "5000291020706",
+  "product": {
+    "brands": "Tanqueray",
+    "code": "5000291020706",
+    "nutriments": {
+      "alcohol": 47.3,
+      "alcohol_100g": 47.3,
+      "alcohol_serving": 47.3,
+      "alcohol_unit": "% vol",
+      "alcohol_value": 47.3
+    },
+    "nutrition_data": "on",
+    "nutrition_data_per": "100ml",
+    "nutrition_data_prepared_per": "100g",
+    "product_name": "tanqueray gin",
+    "product_name_en": "London Dry Gin",
+    "product_quantity": 750,
+    "product_quantity_unit": "ml",
+    "quantity": "750ml"
+  },
+  "status": 1,
+  "status_verbose": "product found"
+}

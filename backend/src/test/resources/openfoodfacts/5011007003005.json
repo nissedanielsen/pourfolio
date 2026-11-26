@@ -1,0 +1,36 @@
+{
+  "code": "5011007003005",
+  "product": {
+    "brands": "Jameson",
+    "categories_tags": [
+      "en:beverages-and-beverages-preparations",
+      "en:beverages",
+      "en:alcoholic-beverages",
+      "en:distilled-beverages",
+      "en:hard-liquors",
+      "en:eaux-de-vie",
+      "en:whisky",
+      "en:irish-whiskey"
+    ],
+    "code": "5011007003005",
+    "nutriments": {
+      "alcohol": 40,
+      "alcohol_100g": 40,
+      "alcohol_serving": 40,
+      "alcohol_unit": "% vol",
+      "alcohol_value": 40
+    },
+    "nutrition_data": "on",
+    "nutrition_data_per": "100ml",
+    "nutrition_data_prepared_per": "100g",
+    "product_name": "Виски ирландский купажированный Джемесон",
+    "product_name_en": "Whisky 40%",
+    "product_quantity": 700,
+    "product_quantity_unit": "g",
+    "quantity": "700 g",
+    "serving_quantity": 200,
+    "serving_quantity_unit": "ml"
+  },
+  "status": 1,
+  "status_verbose": "product found"
+}

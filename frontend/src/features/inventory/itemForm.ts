@@ -1,5 +1,12 @@
 import { z } from 'zod'
-import type { InventoryItem, InventoryItemRequest } from '../../api/client'
+import type {
+  BarcodeLookup,
+  Ingredient,
+  InventoryItem,
+  InventoryItemRequest,
+} from '../../api/client'
+import { isValidGtin } from '../../lib/gtin'
+import { guessIngredient } from '../ingredients/useIngredients'
 import {
   formatNumberInput,
   fromDisplayAmount,
@@ -23,6 +30,8 @@ export const itemFormSchema = z
     capacity: z.string().trim(),
     remaining: z.string().trim(),
     notes: z.string().trim().max(2000, 'Högst 2000 tecken'),
+    /** Optional EAN; spaces are ignored. */
+    barcode: z.string(),
   })
   .superRefine((values, ctx) => {
     const volume = values.unitType === 'VOLUME'
@@ -51,6 +60,10 @@ export const itemFormSchema = z
       issue('remaining', volume ? 'Högst en decimal' : 'Ange ett heltal')
     else if (!Number.isNaN(capacity) && remaining > capacity)
       issue('remaining', 'Kan inte vara mer än storleken')
+
+    const barcode = values.barcode.replace(/\s/g, '')
+    if (barcode !== '' && !isValidGtin(barcode))
+      issue('barcode', 'Ogiltig streckkod – kontrollera siffrorna')
   })
 
 export type ItemFormValues = z.infer<typeof itemFormSchema>
@@ -69,6 +82,7 @@ export const emptyItemForm: ItemFormValues = {
   capacity: '70',
   remaining: '70',
   notes: '',
+  barcode: '',
 }
 
 export function toFormValues(item: InventoryItem): ItemFormValues {
@@ -82,6 +96,37 @@ export function toFormValues(item: InventoryItem): ItemFormValues {
     capacity: formatNumberInput(toDisplayAmount(item.capacity, item.unitType)),
     remaining: formatNumberInput(toDisplayAmount(item.remaining, item.unitType)),
     notes: item.notes ?? '',
+    barcode: item.barcode ?? '',
+  }
+}
+
+/**
+ * Form values for a new item from a barcode lookup: the suggestion (if any) as a full
+ * bottle, the barcode, and an ingredient guessed from the name when none was suggested.
+ */
+export function fromLookup(lookup: BarcodeLookup, ingredients: Ingredient[]): ItemFormValues {
+  const s = lookup.suggestion
+  if (!s) return { ...emptyItemForm, barcode: lookup.barcode }
+  const size =
+    s.capacity !== undefined
+      ? formatNumberInput(toDisplayAmount(s.capacity, s.unitType))
+      : emptyItemForm.capacity
+  const ingredientId =
+    s.ingredientId ??
+    (s.categoryId !== undefined
+      ? guessIngredient(ingredients, s.categoryId, s.name)?.id
+      : undefined)
+  return {
+    ...emptyItemForm,
+    categoryId: s.categoryId !== undefined ? String(s.categoryId) : '',
+    ingredientId: ingredientId !== undefined ? String(ingredientId) : '',
+    name: s.name,
+    brand: s.brand ?? '',
+    unitType: s.unitType,
+    abv: formatNumberInput(s.abv),
+    capacity: size,
+    remaining: size,
+    barcode: lookup.barcode,
   }
 }
 
@@ -98,6 +143,7 @@ export function toRequest(values: ItemFormValues): InventoryItemRequest {
     capacity: fromDisplayAmount(parseNumberInput(values.capacity), values.unitType),
     remaining: fromDisplayAmount(parseNumberInput(values.remaining), values.unitType),
     notes: values.notes || undefined,
+    barcode: values.barcode.replace(/\s/g, '') || undefined,
   }
 }
 
@@ -107,6 +153,7 @@ const serverMessages: Record<string, string> = {
   'category does not exist': 'Kategorin finns inte',
   'ingredient does not belong to the category': 'Ingrediensen hör inte till kategorin',
   'ingredient does not exist': 'Ingrediensen finns inte',
+  'invalid barcode': 'Ogiltig streckkod – kontrollera siffrorna',
 }
 
 /** Translates a backend validation message (English) to Swedish. */

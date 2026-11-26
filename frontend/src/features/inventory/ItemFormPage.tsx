@@ -11,10 +11,18 @@ import TextField from '@mui/material/TextField'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Typography from '@mui/material/Typography'
-import { useRef } from 'react'
+import Link from '@mui/material/Link'
+import { useRef, useState } from 'react'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useLocation, useNavigate, useParams } from 'react-router'
-import { ApiError, type Category, type Ingredient, type InventoryItem } from '../../api/client'
+import {
+  ApiError,
+  type BarcodeLookup,
+  type Category,
+  type Ingredient,
+  type InventoryItem,
+} from '../../api/client'
+import type { ItemPrefill } from '../barcode/ScanButton'
 import { useNotify } from '../../components/notify'
 import { unitLabel } from '../../lib/units'
 import { CategorySelect } from '../categories/CategorySelect'
@@ -22,6 +30,7 @@ import { useCategories } from '../categories/useCategories'
 import { guessIngredient, useIngredients } from '../ingredients/useIngredients'
 import {
   emptyItemForm,
+  fromLookup,
   itemFormSchema,
   toFormValues,
   toRequest,
@@ -85,7 +94,13 @@ function ItemForm({
   const notify = useNotify()
   const create = useCreateItem()
   const update = useUpdateItem(item?.id ?? 0)
-  const returnTo = (location.state as { returnTo?: string } | null)?.returnTo ?? '/'
+  const state = location.state as { returnTo?: string; prefill?: ItemPrefill } | null
+  const returnTo = state?.returnTo ?? '/'
+  // After a barcode scan: fill in what is known about the product.
+  const lookup = item ? undefined : state?.prefill?.lookup
+  const [defaults] = useState<ItemFormValues>(() =>
+    item ? toFormValues(item) : lookup ? fromLookup(lookup, ingredients) : emptyItemForm,
+  )
 
   const {
     control,
@@ -97,7 +112,7 @@ function ItemForm({
     formState: { isSubmitting },
   } = useForm<ItemFormValues>({
     resolver: zodResolver(itemFormSchema),
-    defaultValues: item ? toFormValues(item) : emptyItemForm,
+    defaultValues: defaults,
   })
   const unitType = useWatch({ control, name: 'unitType' })
   const unit = unitLabel(unitType)
@@ -107,7 +122,7 @@ function ItemForm({
 
   // Guess the ingredient from the name and category ("Campari Bitter" -> Campari) until the
   // user picks one, but never override an ingredient an existing item already has.
-  const autoIngredient = useRef(!item?.ingredient)
+  const autoIngredient = useRef(!defaults.ingredientId)
   const updateIngredientGuess = (nextCategoryId: string, nextName: string) => {
     const current = ingredients.find((i) => String(i.id) === ingredientId)
     if (current && String(current.categoryId) !== nextCategoryId) {
@@ -165,6 +180,7 @@ function ItemForm({
       <Typography variant="h5" component="h1" gutterBottom>
         {item ? `Ändra ${item.name}` : 'Lägg till'}
       </Typography>
+      {lookup && <LookupNotice lookup={lookup} />}
       <Stack component="form" spacing={2.5} noValidate onSubmit={handleSubmit(onSubmit)}>
         <Controller
           control={control}
@@ -359,6 +375,22 @@ function ItemForm({
           )}
         />
 
+        <Controller
+          control={control}
+          name="barcode"
+          render={({ field, fieldState }) => (
+            <TextField
+              {...field}
+              label="Streckkod (EAN)"
+              error={!!fieldState.error}
+              helperText={
+                fieldState.error?.message ?? 'Valfri. Då känns flaskan igen när du skannar den.'
+              }
+              slotProps={{ htmlInput: { inputMode: 'numeric', autoComplete: 'off' } }}
+            />
+          )}
+        />
+
         <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
           <Button onClick={() => navigate(returnTo)}>Avbryt</Button>
           <Button type="submit" variant="contained" loading={isSubmitting}>
@@ -368,4 +400,39 @@ function ItemForm({
       </Stack>
     </Paper>
   )
+}
+
+/** Explains where the prefilled values came from after a barcode scan. */
+function LookupNotice({ lookup }: { lookup: BarcodeLookup }) {
+  switch (lookup.source) {
+    case 'KNOWN_PRODUCT':
+      return (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          Ifyllt från förra gången du registrerade den här streckkoden.
+        </Alert>
+      )
+    case 'OPEN_FOOD_FACTS':
+      return (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Förslag från{' '}
+          <Link
+            href={`https://world.openfoodfacts.org/product/${lookup.barcode}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open Food Facts
+          </Link>{' '}
+          – kontrollera uppgifterna innan du sparar.
+        </Alert>
+      )
+    case 'NONE':
+      return (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {lookup.externalLookupFailed
+            ? 'Open Food Facts gick inte att nå just nu. '
+            : 'Okänd streckkod. '}
+          Fyll i uppgifterna, så känns flaskan igen nästa gång du skannar den.
+        </Alert>
+      )
+  }
 }

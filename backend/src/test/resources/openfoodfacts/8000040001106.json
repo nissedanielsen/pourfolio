@@ -1,0 +1,24 @@
+{
+  "code": "8000040001106",
+  "product": {
+    "brands": "Campari",
+    "categories_tags": [
+      "en:beverages-and-beverages-preparations",
+      "en:beverages",
+      "en:alcoholic-beverages",
+      "en:liqueurs"
+    ],
+    "code": "8000040001106",
+    "nutriments": {},
+    "nutrition_data": "on",
+    "nutrition_data_per": "100ml",
+    "nutrition_data_prepared_per": "100g",
+    "product_name": "Campari",
+    "product_name_en": "",
+    "product_quantity": 700,
+    "product_quantity_unit": "ml",
+    "quantity": "0.7l"
+  },
+  "status": 1,
+  "status_verbose": "product found"
+}
