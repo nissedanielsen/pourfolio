@@ -80,6 +80,26 @@ Läsningen sker i webbläsaren: inbyggd `BarcodeDetector` där den finns (Chrome
 annars en WebAssembly-version av ZXing (t.ex. Safari på iPhone). `.wasm`-filen serveras från
 appen själv och laddas först när skannern öppnas. Kameran kräver HTTPS (eller localhost).
 
+## Installera som app
+
+Pourfolio är en PWA och kan läggas på hemskärmen. Då öppnas den i helskärm utan
+webbläsarens adressfält, med egen ikon.
+
+- **iPhone (Safari)** – öppna appen, tryck på _Dela_ och välj _Lägg till på hemskärmen_.
+- **Android (Chrome)** – välj _Installera app_ i menyn.
+
+En service worker sparar appen på enheten, så den startar snabbt och även utan nät. Data
+hämtas alltid från servern först; utan anslutning visas det som senast hämtades och en
+banderoll talar om att man är offline (ändringar kräver anslutning). Det sparade rensas när man
+loggar ut. Inloggningen sparas aldrig.
+
+När en ny version har driftsatts visas _Det finns en ny version_ med knappen _Ladda om_ –
+den nya versionen tar inte över förrän man väljer det.
+
+Ikonerna i `frontend/public/` skapas från `pwa-icon.svg`; kör `npm run generate:icons` efter
+ändringar ([pwa-assets.config.ts](frontend/pwa-assets.config.ts)). Service workern finns bara i
+produktionsbygget (`npm run build && npm run preview`), inte i `npm run dev`.
+
 ## API
 
 Lokalt finns dokumentationen på <http://localhost:8080/swagger-ui.html> (logga in via
@@ -133,7 +153,8 @@ npm run e2e
 ```
 
 En backend som redan kör på :8080 återanvänds, annars startas den. I CI körs testerna mot
-ett produktionsbygge av frontend.
+ett produktionsbygge av frontend. Lokalt görs det med `E2E_PREVIEW=1` (behövs för
+PWA-testerna, som annars hoppas över).
 
 ## Konfiguration
 
@@ -190,4 +211,4 @@ tjänsten – den frågar inte databasen, så täta kontroller håller inte Neon
 
 **Frontend (Vercel)** – importera repot, välj `frontend` som _Root Directory_ och sätt
 `VITE_API_URL` till backendens adress. `frontend/vercel.json` gör att direktlänkar som
-`/items/12` fungerar.
+`/items/12` fungerar och att `sw.js` alltid hämtas på nytt, så att nya versioner hittas.

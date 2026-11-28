@@ -5,6 +5,8 @@ import { defineConfig, devices } from '@playwright/test'
 // running backend on :8080 is reused. In CI both servers are started here, and the
 // frontend is a production build (vite preview, which uses the same /api proxy).
 const ci = !!process.env.CI
+// A production build (vite preview) instead of the dev server; the service worker needs one.
+const preview = ci || !!process.env.E2E_PREVIEW
 const FRONTEND_PORT = 5180
 
 export default defineConfig({
@@ -38,7 +40,7 @@ export default defineConfig({
       stdout: 'ignore',
     },
     {
-      command: ci
+      command: preview
         ? `npm run build && npm run preview -- --port ${FRONTEND_PORT} --strictPort`
         : `npm run dev -- --port ${FRONTEND_PORT} --strictPort`,
       url: `http://localhost:${FRONTEND_PORT}`,

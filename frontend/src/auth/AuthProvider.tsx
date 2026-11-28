@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { api, unwrap } from '../api/client'
+import { clearApiCache } from '../pwa/apiCache'
 import { AuthContext, type AuthState } from './authContext'
 import { clearSession, loadSession, onSessionChange, saveSession, type EndReason } from './session'
 
@@ -18,8 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(next)
         if (!next) {
           setEndReason(reason ?? 'logout')
-          // Don't leave the inventory in memory after signing out.
+          // Don't leave the inventory in memory, or on the device, after signing out.
           queryClient.clear()
+          void clearApiCache()
         }
       }),
     [queryClient],

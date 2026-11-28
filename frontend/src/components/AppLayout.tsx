@@ -11,6 +11,7 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { Outlet, Link as RouterLink, useLocation } from 'react-router'
 import { useAuth } from '../auth/authContext'
+import { OfflineBanner } from '../pwa/OfflineBanner'
 
 const NAV = [
   { to: '/', label: 'Inventarie', isActive: (path: string) => !path.startsWith('/drinks') },
@@ -75,6 +76,7 @@ export function AppLayout() {
           )}
         </Toolbar>
       </AppBar>
+      <OfflineBanner />
       <Container component="main" maxWidth="md" sx={{ py: 3 }}>
         <Outlet />
       </Container>
