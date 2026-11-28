@@ -20,28 +20,46 @@ test('can be installed as an app', async ({ page, request }) => {
   )
 })
 
-test('opens offline with what was last fetched', async ({ page, context }) => {
-  await page.goto('/')
-  await page.getByLabel('Användarnamn').fill(USERNAME)
-  await page.getByLabel('Lösenord').fill(PASSWORD)
-  await page.getByRole('button', { name: 'Logga in' }).click()
-  await expect(page.getByRole('heading', { name: 'Inventarie' })).toBeVisible()
+test('opens offline with what was last fetched', async ({ page, context, request }, testInfo) => {
+  // A bottle of this test's own (the database may be empty, as in CI).
+  const login = await request.post('/api/auth/login', {
+    data: { username: USERNAME, password: PASSWORD },
+  })
+  const { token } = (await login.json()) as { token: string }
+  const headers = { Authorization: `Bearer ${token}` }
+  const categories = (await (await request.get('/api/categories', { headers })).json()) as {
+    children: { id: number; code: string }[]
+  }[]
+  const gin = categories.flatMap((c) => c.children).find((c) => c.code === 'gin')!.id
+  const name = `E2E Offline ${testInfo.project.name} ${Date.now()}`
+  const created = await request.post('/api/inventory-items', {
+    headers,
+    data: { categoryId: gin, name, unitType: 'VOLUME', capacity: 700, remaining: 700 },
+  })
+  const { id } = (await created.json()) as { id: number }
 
-  // Once the service worker controls the page, the API answers are kept.
-  await page.evaluate('navigator.serviceWorker.ready.then(() => true)')
-  await page.reload()
-  await expect(page.getByRole('heading', { name: 'Inventarie' })).toBeVisible()
-  await page.waitForLoadState('networkidle')
-  const items = await page.getByRole('article').allTextContents()
-  expect(items.length).toBeGreaterThan(0)
-
-  await context.setOffline(true)
   try {
+    await page.goto(`/items/${id}`)
+    await page.getByLabel('Användarnamn').fill(USERNAME)
+    await page.getByLabel('Lösenord').fill(PASSWORD)
+    await page.getByRole('button', { name: 'Logga in' }).click()
+    const nameField = page.getByRole('textbox', { name: /Namn/ })
+    await expect(nameField).toHaveValue(name)
+
+    // Once the service worker controls the page, the API answers are kept.
+    await page.evaluate('navigator.serviceWorker.ready.then(() => true)')
     await page.reload()
-    await expect(page.getByText(/Du är offline/)).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Inventarie' })).toBeVisible()
-    await expect(page.getByRole('article')).toHaveText(items)
+    await expect(nameField).toHaveValue(name)
+
+    await context.setOffline(true)
+    try {
+      await page.reload()
+      await expect(page.getByText(/Du är offline/)).toBeVisible()
+      await expect(nameField).toHaveValue(name)
+    } finally {
+      await context.setOffline(false)
+    }
   } finally {
-    await context.setOffline(false)
+    await request.delete(`/api/inventory-items/${id}`, { headers })
   }
 })
