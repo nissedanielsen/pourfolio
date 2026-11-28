@@ -51,10 +51,17 @@ och jämför dem med inventariet:
 - **Volym** – mängderna jämförs i ml och appen räknar ut hur många drinkar det räcker till.
   Citrusfrukter räknas om till juice (en lime ≈ 3 cl), andra styckvaror (t.ex. burkar tonic)
   räknas som en portion per styck. Stänk och "fyll upp" kräver bara att något finns.
-- **Alltid hemma** – is, vatten, sodavatten, socker, sockerlag och salt behöver inte registreras.
+- **Alltid hemma** – is, vatten, sodavatten, socker, sockerlag, salt, ägg och Angostura behöver
+  inte registreras.
 - **Köptips** – vad som skulle göra flest nya drinkar möjliga, bland recept som bara saknar en sak.
 - **Överraska mig** – en slumpad drink du kan göra just nu; _Ge mig en annan_ visar alla innan
   någon upprepas. Kan inget göras föreslås en drink som bara saknar en sak.
+- **Jag gjorde den!** – drar av det drinken använde från lagret (receptsidan och _Överraska mig_,
+  bara när allt finns hemma). Dialogen visar vad som tas från vilken flaska; antal, flaska och
+  mängd går att ändra. Flaskan med minst kvar används först. Citrus tas som hela frukter,
+  styckvaror som burkar tonic en per drink. Stänk, "fyll upp", valfria rader och det som alltid
+  finns hemma dras inte av. _Ångra_ direkt efteråt lägger tillbaka allt. Varje gång loggas i
+  `drink_log`.
 
 ## Streckkoder
 
@@ -95,6 +102,9 @@ Lokalt finns dokumentationen på <http://localhost:8080/swagger-ui.html> (logga 
 | `GET`    | `/api/recipes/{id}`                   | Recept med status per ingrediens                                                                    |
 | `GET`    | `/api/recipes/shopping-suggestions`   | Köptips                                                                                             |
 | `GET`    | `/api/barcodes/{barcode}`             | Det som är känt om en streckkod (egna flaskor, tidigare produkter, Open Food Facts)                 |
+| `GET`    | `/api/recipes/{id}/make-plan`         | Vad en drink skulle ta från vilken flaska; `servings`                                               |
+| `POST`   | `/api/recipes/{id}/make`              | Dra av från lagret och logga (bara när allt finns)                                                  |
+| `POST`   | `/api/drink-log/{id}/undo`            | Lägg tillbaka det en loggad drink tog (bara strax efteråt)                                          |
 
 Mängder lagras i ml för `VOLUME` och i styck för `COUNT`; frontend visar volymer i cl.
 Fel returneras som RFC 9457 problem details, med fältfel i `errors`.

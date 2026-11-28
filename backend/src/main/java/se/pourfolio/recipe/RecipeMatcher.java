@@ -100,20 +100,9 @@ public final class RecipeMatcher {
             return new LineMatch(line, LineStatus.ALWAYS_AVAILABLE, List.of(), false, null, null, null, null);
         }
 
-        boolean usesSubstitute = false;
-        List<StockItem> candidates;
-        if (ingredient != null) {
-            candidates = itemsWithIngredient(Set.of(ingredient.id()));
-            if (candidates.isEmpty() && !ingredient.substituteIds().isEmpty()) {
-                candidates = itemsWithIngredient(ingredient.substituteIds());
-                usesSubstitute = !candidates.isEmpty();
-            }
-        } else {
-            candidates = stock.stream()
-                    .filter(item -> line.categoryId().equals(item.categoryId())
-                            || line.categoryId().equals(item.parentCategoryId()))
-                    .toList();
-        }
+        Candidates found = candidates(line);
+        List<StockItem> candidates = found.items();
+        boolean usesSubstitute = found.usesSubstitute();
 
         if (candidates.isEmpty()) {
             return new LineMatch(line, LineStatus.MISSING, List.of(), false, null, null, null, null);
@@ -141,6 +130,37 @@ public final class RecipeMatcher {
         LineStatus status = servings > 0 ? LineStatus.OK : LineStatus.NOT_ENOUGH;
         return new LineMatch(line, status, candidates, usesSubstitute, requirement.measure(),
                 requirement.amount(), available, servings);
+    }
+
+    /** Items at home that a line can use, and whether they are substitutes. */
+    public record Candidates(List<StockItem> items, boolean usesSubstitute) {
+    }
+
+    /**
+     * Items with something left that can be used for the line: the ingredient itself (or, if
+     * there is none, its substitutes), or any item in the line's category or its subcategories.
+     */
+    public Candidates candidates(Line line) {
+        IngredientInfo ingredient = line.ingredientId() == null ? null : ingredients.get(line.ingredientId());
+        if (ingredient != null) {
+            List<StockItem> items = itemsWithIngredient(Set.of(ingredient.id()));
+            if (items.isEmpty() && !ingredient.substituteIds().isEmpty()) {
+                List<StockItem> substitutes = itemsWithIngredient(ingredient.substituteIds());
+                return new Candidates(substitutes, !substitutes.isEmpty());
+            }
+            return new Candidates(items, false);
+        }
+        if (line.categoryId() == null) {
+            return new Candidates(List.of(), false);
+        }
+        return new Candidates(stock.stream()
+                .filter(item -> line.categoryId().equals(item.categoryId())
+                        || line.categoryId().equals(item.parentCategoryId()))
+                .toList(), false);
+    }
+
+    public IngredientInfo ingredient(Long id) {
+        return id == null ? null : ingredients.get(id);
     }
 
     private List<StockItem> itemsWithIngredient(Set<Long> ingredientIds) {

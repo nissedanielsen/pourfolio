@@ -20,6 +20,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/recipes/{id}/make': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['make']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/inventory-items': {
     parameters: {
       query?: never
@@ -30,6 +46,22 @@ export interface paths {
     get: operations['search']
     put?: never
     post: operations['create']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/drink-log/{id}/undo': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['undo']
     delete?: never
     options?: never
     head?: never
@@ -92,6 +124,22 @@ export interface paths {
       cookie?: never
     }
     get: operations['get_1']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/recipes/{id}/make-plan': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['plan']
     put?: never
     post?: never
     delete?: never
@@ -236,6 +284,24 @@ export interface components {
       /** Format: date-time */
       updatedAt: string
     }
+    Deduction: {
+      /** Format: int64 */
+      itemId: number
+      /** Format: int32 */
+      amount: number
+    }
+    MakeRequest: {
+      /** Format: int32 */
+      servings: number
+      deductions: components['schemas']['Deduction'][]
+    }
+    MakeResult: {
+      /** Format: int64 */
+      drinkLogId: number
+      recipeName: string
+      /** Format: int32 */
+      servings: number
+    }
     LoginRequest: {
       username: string
       password: string
@@ -310,6 +376,48 @@ export interface components {
       available?: number
       usesSubstitute: boolean
       matchedItems: components['schemas']['MatchedItem'][]
+    }
+    Alternative: {
+      /** Format: int64 */
+      itemId: number
+      itemName: string
+      /** @enum {string} */
+      unitType: 'VOLUME' | 'COUNT'
+      /** Format: int32 */
+      remaining: number
+    }
+    MakePlan: {
+      /** Format: int64 */
+      recipeId: number
+      recipeName: string
+      /** Format: int32 */
+      servings: number
+      canMake: boolean
+      lines: components['schemas']['PlannedLine'][]
+    }
+    PlannedDeduction: {
+      /** Format: int64 */
+      itemId: number
+      itemName: string
+      /** @enum {string} */
+      unitType: 'VOLUME' | 'COUNT'
+      /** Format: int32 */
+      amount: number
+      /** Format: int32 */
+      remainingBefore: number
+    }
+    PlannedLine: {
+      /** Format: int32 */
+      position: number
+      name: string
+      amount?: number
+      /** @enum {string} */
+      unit: 'ML' | 'DASH' | 'TSP' | 'PIECE' | 'TOP_UP'
+      /** @enum {string} */
+      kind: 'DEDUCT' | 'ALWAYS_AVAILABLE' | 'NOT_DEDUCTED' | 'OPTIONAL'
+      enough: boolean
+      deductions: components['schemas']['PlannedDeduction'][]
+      alternatives: components['schemas']['Alternative'][]
     }
     RecipeRef: {
       /** Format: int64 */
@@ -461,6 +569,32 @@ export interface operations {
       }
     }
   }
+  make: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MakeRequest']
+      }
+    }
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MakeResult']
+        }
+      }
+    }
+  }
   search: {
     parameters: {
       query?: {
@@ -515,6 +649,26 @@ export interface operations {
         content: {
           'application/json': components['schemas']['InventoryItemResponse']
         }
+      }
+    }
+  }
+  undo: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -608,6 +762,30 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['RecipeDetail']
+        }
+      }
+    }
+  }
+  plan: {
+    parameters: {
+      query?: {
+        servings?: number
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['MakePlan']
         }
       }
     }

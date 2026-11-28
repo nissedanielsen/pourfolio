@@ -141,9 +141,9 @@ class RecipeControllerTests {
     }
 
     @Test
-    void sugarSimpleSyrupSaltIceAndWaterAreAlwaysAtHome() throws Exception {
+    void basicsAreAlwaysAtHome() throws Exception {
         assertThat(jdbc.queryForList("SELECT code FROM ingredient WHERE always_available ORDER BY code", String.class))
-                .containsExactly("ice", "salt", "simple_syrup", "soda_water", "sugar", "water");
+                .containsExactly("angostura", "egg", "ice", "salt", "simple_syrup", "soda_water", "sugar", "water");
 
         // Old Fashioned: bourbon, simple syrup and bitters – only bourbon and bitters are registered.
         item("Buffalo Trace", "whisky", "bourbon", 700);

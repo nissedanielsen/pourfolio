@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography'
 import { useState, type ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router'
 import type { RecipeSummary } from '../../api/client'
+import { MakeDialog } from './MakeDialog'
 import { describeServings, describeShortfall } from './recipeFormat'
 import { pickNext } from './surprise'
 import { useRecipes } from './useRecipes'
@@ -19,7 +20,13 @@ import { useRecipes } from './useRecipes'
 /** "Överraska mig": a random drink you can make right now, with "Ge mig en annan". */
 export function SurpriseButton() {
   const [open, setOpen] = useState(false)
+  const [making, setMaking] = useState<RecipeSummary | null>(null)
   const close = () => setOpen(false)
+  // "Jag gjorde den!" closes the suggestion and opens the make dialog.
+  const make = (recipe: RecipeSummary) => {
+    setOpen(false)
+    setMaking(recipe)
+  }
   return (
     <>
       <Button variant="outlined" startIcon={<CasinoOutlinedIcon />} onClick={() => setOpen(true)}>
@@ -28,14 +35,28 @@ export function SurpriseButton() {
       <Dialog open={open} onClose={close} fullWidth maxWidth="xs" aria-labelledby="surprise-title">
         <DialogTitle id="surprise-title">Vad sägs om …</DialogTitle>
         {/* Mounted only while open, so every opening starts a fresh round. */}
-        {open && <Surprise onClose={close} />}
+        {open && <Surprise onClose={close} onMake={make} />}
       </Dialog>
+      {making && (
+        <MakeDialog
+          recipeId={making.id}
+          recipeName={making.name}
+          open
+          onClose={() => setMaking(null)}
+        />
+      )}
     </>
   )
 }
 
 /** Loads the candidates: drinks you can make, or else drinks missing only one thing. */
-function Surprise({ onClose }: { onClose: () => void }) {
+function Surprise({
+  onClose,
+  onMake,
+}: {
+  onClose: () => void
+  onMake: (recipe: RecipeSummary) => void
+}) {
   const canMake = useRecipes('CAN_MAKE')
   const missingOne = useRecipes('MISSING_ONE')
 
@@ -67,7 +88,7 @@ function Surprise({ onClose }: { onClose: () => void }) {
       </Frame>
     )
   }
-  return <Picker candidates={candidates} fallback={fallback} onClose={onClose} />
+  return <Picker candidates={candidates} fallback={fallback} onClose={onClose} onMake={onMake} />
 }
 
 /** Shows one random candidate at a time, going through all before repeating. */
@@ -75,10 +96,12 @@ function Picker({
   candidates,
   fallback,
   onClose,
+  onMake,
 }: {
   candidates: RecipeSummary[]
   fallback: boolean
   onClose: () => void
+  onMake: (recipe: RecipeSummary) => void
 }) {
   const [shown, setShown] = useState<number[]>(() => pickNext(candidates, [])?.shown ?? [])
   const currentId = shown[shown.length - 1]
@@ -97,6 +120,7 @@ function Picker({
           <Button onClick={next} disabled={candidates.length < 2}>
             Ge mig en annan
           </Button>
+          {!fallback && <Button onClick={() => onMake(current)}>Jag gjorde den!</Button>}
           <Button variant="contained" component={RouterLink} to={`/drinks/${current.id}`}>
             Visa receptet
           </Button>

@@ -101,7 +101,7 @@ public class RecipeService {
                 .toList();
     }
 
-    private RecipeMatcher matcher() {
+    RecipeMatcher matcher() {
         Map<Long, IngredientInfo> ingredientInfo = ingredients.findAllWithDetails().stream()
                 .collect(Collectors.toMap(Ingredient::getId, i -> new IngredientInfo(i.getId(), i.getName(),
                         i.isAlwaysAvailable(), i.getMlPerPiece(),
@@ -117,7 +117,7 @@ public class RecipeService {
                 item.getUnitType(), item.getRemaining());
     }
 
-    private static List<Line> lines(Recipe recipe) {
+    static List<Line> lines(Recipe recipe) {
         return recipe.getLines().stream()
                 .map(l -> new Line(l.getPosition(), l.getAmount(), l.getUnit(),
                         l.getIngredient() == null ? null : l.getIngredient().getId(),

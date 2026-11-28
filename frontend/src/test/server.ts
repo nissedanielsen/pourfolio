@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import type {
   BarcodeLookup,
+  Schemas,
   Category,
   Ingredient,
   InventoryItem,
@@ -131,6 +132,68 @@ export const gimletDetail: RecipeDetail = {
   ],
 }
 
+/** Plan for making Gimlet: gin (two bottles to choose from), limes, simple syrup always at home. */
+export function gimletPlan(servings: number): Schemas['MakePlan'] {
+  const limes = Math.ceil((20 * servings) / 30)
+  return {
+    recipeId: 1,
+    recipeName: 'Gimlet',
+    servings,
+    canMake: limes <= 4,
+    lines: [
+      {
+        position: 1,
+        name: 'Gin',
+        amount: 60,
+        unit: 'ML',
+        kind: 'DEDUCT',
+        enough: true,
+        deductions: [
+          {
+            itemId: 1,
+            itemName: 'Tanqueray London Dry',
+            unitType: 'VOLUME',
+            amount: 60 * servings,
+            remainingBefore: 520,
+          },
+        ],
+        alternatives: [
+          { itemId: 1, itemName: 'Tanqueray London Dry', unitType: 'VOLUME', remaining: 520 },
+          { itemId: 3, itemName: "Hendrick's", unitType: 'VOLUME', remaining: 700 },
+        ],
+      },
+      {
+        position: 2,
+        name: 'Lime / limejuice',
+        amount: 20,
+        unit: 'ML',
+        kind: 'DEDUCT',
+        enough: limes <= 4,
+        deductions: [
+          {
+            itemId: 7,
+            itemName: 'Lime',
+            unitType: 'COUNT',
+            amount: Math.min(limes, 4),
+            remainingBefore: 4,
+          },
+        ],
+        alternatives: [{ itemId: 7, itemName: 'Lime', unitType: 'COUNT', remaining: 4 }],
+      },
+      {
+        position: 3,
+        name: 'Sockerlag',
+        amount: 15,
+        unit: 'ML',
+        kind: 'ALWAYS_AVAILABLE',
+        enough: true,
+        deductions: [],
+        alternatives: [],
+      },
+    ],
+  }
+}
+
 export function makeItem(overrides: Partial<InventoryItem> = {}): InventoryItem {
   return {
     id: 1,
@@ -205,6 +268,23 @@ export function createFakeBackend(
         { name: 'Tonic', recipeCount: 1, recipes: [{ id: 2, name: 'Gin & Tonic' }] },
       ]),
     ),
+    http.get('*/api/recipes/:id/make-plan', ({ request }) => {
+      const servings = Number(new URL(request.url).searchParams.get('servings') ?? '1')
+      requests.push({ method: 'GET', url: new URL(request.url) })
+      return HttpResponse.json(gimletPlan(servings))
+    }),
+    http.post('*/api/recipes/:id/make', async ({ request }) => {
+      const body = (await request.json()) as { servings: number }
+      requests.push({ method: 'POST', url: new URL(request.url), body })
+      return HttpResponse.json(
+        { drinkLogId: 99, recipeName: 'Gimlet', servings: body.servings },
+        { status: 201 },
+      )
+    }),
+    http.post('*/api/drink-log/:id/undo', ({ request }) => {
+      requests.push({ method: 'POST', url: new URL(request.url) })
+      return new HttpResponse(null, { status: 204 })
+    }),
     http.get('*/api/recipes/:id', ({ params }) =>
       Number(params.id) === gimletDetail.id
         ? HttpResponse.json(gimletDetail)

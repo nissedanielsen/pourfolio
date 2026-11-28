@@ -1,4 +1,5 @@
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
+import LocalBarOutlinedIcon from '@mui/icons-material/LocalBarOutlined'
 import CancelIcon from '@mui/icons-material/Cancel'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined'
@@ -13,14 +14,17 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
+import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router'
 import { ApiError, type RecipeLine } from '../../api/client'
+import { MakeDialog } from './MakeDialog'
 import { describeServings, describeShortfall, formatRecipeAmount } from './recipeFormat'
 import { useRecipe } from './useRecipes'
 
 export function RecipeDetailPage() {
   const id = Number(useParams().id)
   const recipe = useRecipe(id)
+  const [making, setMaking] = useState(false)
 
   const back = (
     <Button component={RouterLink} to="/drinks" startIcon={<ArrowBackIcon />} sx={{ mb: 1 }}>
@@ -66,7 +70,21 @@ export function RecipeDetailPage() {
         )}
 
         {r.canMake ? (
-          <Alert severity="success" sx={{ mb: 2 }}>
+          <Alert
+            severity="success"
+            sx={{ mb: 2, alignItems: 'center' }}
+            action={
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                startIcon={<LocalBarOutlinedIcon />}
+                onClick={() => setMaking(true)}
+              >
+                Jag gjorde den!
+              </Button>
+            }
+          >
             Du har allt som behövs. {describeServings(r.servings)}.
           </Alert>
         ) : (
@@ -108,6 +126,12 @@ export function RecipeDetailPage() {
           </Typography>
         )}
       </Paper>
+      <MakeDialog
+        recipeId={r.id}
+        recipeName={r.name}
+        open={making}
+        onClose={() => setMaking(false)}
+      />
     </>
   )
 }
